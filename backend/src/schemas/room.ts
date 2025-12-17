@@ -33,6 +33,8 @@ export const updateRoomSchema = z.object({
     roomNumber: z.string().min(1, '房间号不能为空').optional(),
     rent: z.number().min(0, '租金不能为负数').optional(),
     deposit: z.number().min(0, '押金不能为负数').optional(),
+    wifiPassword: z.string().optional(),
+    lockPassword: z.string().optional(),
 })
 
 export type UpdateRoomInput = z.infer<typeof updateRoomSchema>

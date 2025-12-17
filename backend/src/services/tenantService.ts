@@ -102,13 +102,17 @@ export class TenantService {
                 }
             })
 
-            // 更新房间状态并关联租客
+            // 更新房间状态并关联租客，如果有密码则一并更新
+            const roomUpdateData: any = {
+                status: 'rented',
+                tenantId: tenant.id
+            }
+            if (data.wifiPassword !== undefined) roomUpdateData.wifiPassword = data.wifiPassword
+            if (data.lockPassword !== undefined) roomUpdateData.lockPassword = data.lockPassword
+
             const updatedRoom = await tx.room.update({
                 where: { id: data.roomId },
-                data: {
-                    status: 'rented',
-                    tenantId: tenant.id
-                }
+                data: roomUpdateData
             })
 
             return { tenant, room: updatedRoom }

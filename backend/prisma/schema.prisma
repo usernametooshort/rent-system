@@ -26,6 +26,8 @@ model Room {
   rent        Float
   deposit     Float
   status      String      @default("vacant") // 'vacant' | 'rented'
+  wifiPassword String?    // Wi-Fi 密码
+  lockPassword String?    // 智能门锁密码
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   
@@ -63,6 +65,7 @@ model Tenant {
   name                String
   phone               String       @unique
   phoneLast6          String       // 手机后6位，用于登录验证
+  passwordHash        String?      // 登录密码（可选，默认使用手机后6位）
   leaseStartDate      DateTime
   leaseDurationMonths Int
   createdAt           DateTime     @default(now())

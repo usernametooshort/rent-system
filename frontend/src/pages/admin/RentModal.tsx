@@ -92,6 +92,27 @@ const RentModal: React.FC<RentModalProps> = ({ room, isOpen, onClose, onSuccess 
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Wi-Fi 密码</label>
+                                <input
+                                    type="text"
+                                    {...register('wifiPassword')}
+                                    className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2"
+                                    placeholder="可选"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">门锁密码</label>
+                                <input
+                                    type="text"
+                                    {...register('lockPassword')}
+                                    className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2"
+                                    placeholder="可选"
+                                />
+                            </div>
+                        </div>
+
                         <button
                             type="submit"
                             disabled={isSubmitting}

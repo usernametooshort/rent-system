@@ -34,6 +34,8 @@ export interface Room {
     rent: number
     deposit: number
     status: RoomStatus
+    wifiPassword?: string
+    lockPassword?: string
     images: RoomImage[]
     appliances: Appliance[]
     tenant?: {

@@ -4,7 +4,7 @@ import client from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { Room, RoomStatus } from '../types'
 import { format } from 'date-fns'
-import { Loader2, Calendar, CreditCard, PenTool, AlertCircle } from 'lucide-react'
+import { Loader2, Calendar, CreditCard, PenTool, AlertCircle, Router, Lock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { Dialog } from '@headlessui/react'
 
@@ -138,6 +138,38 @@ const TenantDashboard: React.FC = () => {
                     </div>
                     <span className="text-sm font-medium text-gray-700">预约退租</span>
                 </button>
+            </div>
+
+            {/* 智能设备 & 网络 */}
+            <div className="bg-white rounded-xl shadow-sm p-4 mt-4">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <Router size={18} className="text-primary-500" />
+                    智能服务
+                </h3>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                        <div className="flex items-center gap-2">
+                            <Router size={16} className="text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">Wi-Fi 密码</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono bg-gray-50 px-2 py-1 rounded text-sm select-all">
+                                {room.wifiPassword || '未设置'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
+                        <div className="flex items-center gap-2">
+                            <Lock size={16} className="text-gray-400" />
+                            <span className="text-sm font-medium text-gray-700">门锁密码</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono bg-gray-50 px-2 py-1 rounded text-sm select-all">
+                                {room.lockPassword || '未设置'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* 租金记录 */}

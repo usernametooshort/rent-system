@@ -1,18 +1,20 @@
 import React, { useState } from 'react'
-import { DoorOpen, DollarSign, Wrench, Users, Megaphone } from 'lucide-react'
+import { DoorOpen, DollarSign, Wrench, Users, Megaphone, Shield } from 'lucide-react'
+import AdminAnnouncements from './AdminAnnouncements'
 import AdminMoveOutRequests from './AdminMoveOutRequests'
 import AdminRentPayments from './AdminRentPayments'
 import AdminRepairRequests from './AdminRepairRequests'
 import AdminTenants from './AdminTenants'
-import AdminAnnouncements from './AdminAnnouncements'
+import AdminManagement from './AdminManagement'
 
-type Tab = 'tenants' | 'announcements' | 'moveout' | 'rent' | 'repair'
+type Tab = 'tenants' | 'announcements' | 'moveout' | 'rent' | 'repair' | 'admins'
 
 const AdminServices: React.FC = () => {
     const [activeTab, setActiveTab] = useState<Tab>('tenants')
 
     const tabs = [
         { id: 'tenants' as Tab, label: '租客', icon: Users },
+        { id: 'admins' as Tab, label: '管理员', icon: Shield },
         { id: 'announcements' as Tab, label: '公告', icon: Megaphone },
         { id: 'moveout' as Tab, label: '退租申请', icon: DoorOpen },
         { id: 'rent' as Tab, label: '租金管理', icon: DollarSign },
@@ -44,6 +46,7 @@ const AdminServices: React.FC = () => {
             {activeTab === 'moveout' && <AdminMoveOutRequests />}
             {activeTab === 'rent' && <AdminRentPayments />}
             {activeTab === 'repair' && <AdminRepairRequests />}
+            {activeTab === 'admins' && <AdminManagement />}
         </div>
     )
 }

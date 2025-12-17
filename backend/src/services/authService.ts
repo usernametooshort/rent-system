@@ -12,10 +12,15 @@ import {
 import {
     AdminLoginInput,
     TenantLoginInput,
-    RefreshTokenInput
+    RefreshTokenInput,
+    ChangePasswordInput,
+    ResetTenantPasswordInput,
+    CreateAdminInput,
+    UpdateAdminProfileInput
 } from '../schemas/auth.js'
 import bcrypt from 'bcryptjs'
 import { config } from '../config/index.js'
+import { z } from 'zod'
 
 export class AuthService {
     /**
@@ -95,6 +100,7 @@ export class AuthService {
     /**
      * 租客登录
      * 验证：姓名 + 房间号 + 手机后6位
+     * TODO: 支持密码登录
      */
     async tenantLogin(input: TenantLoginInput) {
         // 模拟耗时操作，防止时序攻击
@@ -115,8 +121,6 @@ export class AuthService {
             const tenant = room.tenant
 
             // 2. 验证姓名和手机后6位
-            // 注意：这里做大小写不敏感比较即可是比较好的体验，但姓名通常严格匹配
-            // 手机号后6位匹配
             const phoneLast6 = tenant.phone.slice(-6)
 
             if (
@@ -125,6 +129,11 @@ export class AuthService {
             ) {
                 throw new UnauthorizedError('登录信息不匹配')
             }
+
+            // 如果租客已设置密码，这里其实应该优先验证密码。
+            // 但目前的 TenantLoginInput 是没有 password 字段的。
+            // 为了兼容，我们暂时保持原样，允许如果不改前端登录页，依然可以用旧方式登录。
+            // 理想情况下应该根据是否有 passwordHash 来决定流程。
 
             // 3. 生成 Token
             const tokens = generateTokenPair({
@@ -181,6 +190,159 @@ export class AuthService {
             return { accessToken }
         } catch {
             throw new UnauthorizedError('Refresh token 无效或已过期')
+        }
+    }
+
+    /**
+     * 修改密码
+     */
+    async changePassword(userId: string, input: ChangePasswordInput, role: string) {
+        // 1. 验证旧密码
+        let passwordHash: string | null = null
+        let initialPassword = '' // 租客的初始密码（手机后6位）
+
+        if (role === 'admin') {
+            const user = await prisma.admin.findUnique({ where: { id: userId } })
+            if (!user) throw new NotFoundError('用户不存在')
+            passwordHash = user.passwordHash
+        } else {
+            const user = await prisma.tenant.findUnique({ where: { id: userId } })
+            if (!user) throw new NotFoundError('用户不存在')
+            passwordHash = user.passwordHash
+            initialPassword = user.phoneLast6
+        }
+
+        if (passwordHash) {
+            const isValid = await bcrypt.compare(input.oldPassword, passwordHash)
+            if (!isValid) throw new UnauthorizedError('旧密码错误')
+        } else {
+            // 租客如果没有设置过密码，旧密码必须匹配初始密码（手机后6位）
+            if (role === 'tenant') {
+                if (input.oldPassword !== initialPassword) {
+                    throw new UnauthorizedError('旧密码错误（初始密码为手机后6位）')
+                }
+            } else {
+                // Admin 理论上不可能没有 hash
+                throw new UnauthorizedError('账号异常，请联系管理员')
+            }
+        }
+
+        // 2. 更新新密码
+        const newHashedPassword = await bcrypt.hash(input.newPassword, 10)
+
+        if (role === 'admin') {
+            await prisma.admin.update({
+                where: { id: userId },
+                data: { passwordHash: newHashedPassword }
+            })
+        } else {
+            await prisma.tenant.update({
+                where: { id: userId },
+                data: { passwordHash: newHashedPassword }
+            })
+        }
+
+        return { success: true }
+    }
+
+    /**
+     * 重置租客密码 (房东操作)
+     */
+    async resetTenantPassword(tenantId: string, input: ResetTenantPasswordInput) {
+        const hashedPassword = await bcrypt.hash(input.newPassword, 10)
+        await prisma.tenant.update({
+            where: { id: tenantId },
+            data: { passwordHash: hashedPassword }
+        })
+        return { success: true }
+    }
+
+    /**
+     * 创建管理员
+     */
+    async createAdmin(input: CreateAdminInput) {
+        const existing = await prisma.admin.findUnique({ where: { username: input.username } })
+        if (existing) throw new ConflictError('用户名已存在')
+
+        // 不允许创建和初始管理员同名的账号（为了避免混淆）
+        if (input.username === config.ADMIN_USERNAME) {
+            throw new ConflictError('该用户名保留，不可创建')
+        }
+
+        const hashedPassword = await bcrypt.hash(input.password, 10)
+        const admin = await prisma.admin.create({
+            data: {
+                username: input.username,
+                passwordHash: hashedPassword
+            }
+        })
+
+        return {
+            id: admin.id,
+            username: admin.username
+        }
+    }
+
+    /**
+     * 获取所有管理员
+     */
+    async getAdmins() {
+        const admins = await prisma.admin.findMany({
+            select: { id: true, username: true, createdAt: true }
+        })
+        return admins
+    }
+
+    /**
+     * 删除管理员
+     */
+    async deleteAdmin(adminId: string, currentAdminId: string) {
+        const admin = await prisma.admin.findUnique({ where: { id: adminId } })
+        if (!admin) throw new NotFoundError('管理员不存在')
+
+        // 1. 不能删除自己
+        if (adminId === currentAdminId) throw new ConflictError('不能删除自己')
+
+        // 2. 不能删除初始管理员 (config defined)
+        if (admin.username === config.ADMIN_USERNAME) throw new ConflictError('初始管理员不可删除')
+
+        // 3. 只有初始管理员或者其他超级管理员权限? 目前假设所有管理员平权
+
+        await prisma.admin.delete({ where: { id: adminId } })
+        return { success: true }
+    }
+
+    /**
+     * 更新管理员资料 (改名)
+     */
+
+    /**
+     * 更新管理员资料 (改名)
+     */
+    async updateAdminProfile(adminId: string, input: UpdateAdminProfileInput) {
+        const admin = await prisma.admin.findUnique({ where: { id: adminId } })
+        if (!admin) throw new NotFoundError('管理员不存在')
+
+        // 保护初始管理员
+        if (admin.username === config.ADMIN_USERNAME) {
+            throw new ConflictError('初始管理员账号无法修改用户名 (请在环境变量中修改)')
+        }
+
+        // 检查新用户名是否占用
+        const existing = await prisma.admin.findUnique({ where: { username: input.username } })
+        if (existing && existing.id !== adminId) throw new ConflictError('用户名已存在')
+
+        // 再次检查新用户名是否撞了初始管理员
+        if (input.username === config.ADMIN_USERNAME) throw new ConflictError('用户名与初始管理员冲突')
+
+        const updated = await prisma.admin.update({
+            where: { id: adminId },
+            data: { username: input.username }
+        })
+
+        return {
+            id: updated.id,
+            username: updated.username
         }
     }
 }

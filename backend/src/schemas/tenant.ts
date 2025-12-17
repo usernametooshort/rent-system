@@ -22,6 +22,8 @@ export const createTenantSchema = z.object({
         .int('租期必须为整数')
         .min(1, '租期至少1个月')
         .max(60, '租期最长60个月'),
+    wifiPassword: z.string().optional(),
+    lockPassword: z.string().optional(),
 })
 
 export type CreateTenantInput = z.infer<typeof createTenantSchema>

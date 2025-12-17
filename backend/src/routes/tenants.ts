@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest } from 'fastify'
 import { tenantService } from '../services/tenantService.js'
+import { authService } from '../services/authService.js'
 import { authenticate } from '../middlewares/auth.js'
 import { adminOnly, requireRole } from '../middlewares/rbac.js'
 import { checkTenantOwnership } from '../middlewares/resourceOwner.js'
@@ -44,6 +45,15 @@ export async function tenantRoutes(fastify: FastifyInstance) {
         const result = await tenantService.deleteTenant(request.params.id)
         return reply.send({ success: true, data: result })
     })
+
+    // 重置租客密码 (管理员)
+    fastify.post<{ Params: { id: string } }>('/:id/reset-password', {
+        preHandler: [authenticate, adminOnly]
+    }, async (request: any, reply) => {
+        const result = await authService.resetTenantPassword(request.params.id, request.body as any)
+        return reply.send({ success: true, data: result })
+    })
+
 
     // 添加租金记录 (管理员)
     fastify.post<{ Params: { id: string } }>('/:id/rent-records', {

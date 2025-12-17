@@ -21,6 +21,10 @@ interface RepairRequest {
             roomNumber: string
         }
     }
+    images: {
+        id: string
+        url: string
+    }[]
 }
 
 const AdminRepairRequests: React.FC = () => {
@@ -28,6 +32,7 @@ const AdminRepairRequests: React.FC = () => {
     const [processingRequest, setProcessingRequest] = useState<RepairRequest | null>(null)
     const [newStatus, setNewStatus] = useState<'processing' | 'completed'>('processing')
     const [note, setNote] = useState('')
+    const [previewImage, setPreviewImage] = useState<string | null>(null)
 
     // 获取报修列表
     const { data, isLoading } = useQuery({
@@ -101,6 +106,22 @@ const AdminRepairRequests: React.FC = () => {
                                         </div>
                                         <div className="font-medium text-gray-900 mt-1">{req.title}</div>
                                         <div className="text-sm text-gray-500 mt-1">{req.description}</div>
+
+                                        {/* 图片列表 */}
+                                        {req.images && req.images.length > 0 && (
+                                            <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+                                                {req.images.map((img) => (
+                                                    <img
+                                                        key={img.id}
+                                                        src={img.url}
+                                                        alt="报修图片"
+                                                        className="h-20 w-20 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-90"
+                                                        onClick={() => setPreviewImage(img.url)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+
                                         <div className="text-xs text-gray-400 mt-2">
                                             提交时间: {new Date(req.createdAt).toLocaleString('zh-CN')}
                                         </div>
@@ -183,6 +204,23 @@ const AdminRepairRequests: React.FC = () => {
                                     取消
                                 </button>
                             </div>
+                        )}
+                    </Dialog.Panel>
+                </div>
+            </Dialog>
+
+            {/* 图片预览 Modal */}
+            <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} className="relative z-50">
+                <div className="fixed inset-0 bg-black/80" aria-hidden="true" />
+                <div className="fixed inset-0 flex items-center justify-center p-4">
+                    <Dialog.Panel className="max-w-4xl w-full max-h-[90vh] overflow-hidden flex justify-center">
+                        {previewImage && (
+                            <img
+                                src={previewImage}
+                                alt="预览"
+                                className="max-w-full max-h-[90vh] object-contain rounded"
+                                onClick={() => setPreviewImage(null)}
+                            />
                         )}
                     </Dialog.Panel>
                 </div>

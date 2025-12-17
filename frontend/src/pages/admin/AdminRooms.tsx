@@ -299,7 +299,7 @@ const AdminRooms: React.FC = () => {
                         setIsDetailModalOpen(false)
                         queryClient.invalidateQueries({ queryKey: ['admin-rooms'] })
                     }}
-                    room={detailRoom}
+                    roomId={detailRoom.id}
                 />
             )}
 

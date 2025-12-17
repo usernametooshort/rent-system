@@ -36,3 +36,41 @@ export const refreshTokenSchema = z.object({
 })
 
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>
+
+/**
+ * 修改密码请求
+ */
+export const changePasswordSchema = z.object({
+    oldPassword: z.string().min(1, '旧密码不能为空'),
+    newPassword: z.string().min(6, '新密码至少6位'),
+})
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+
+/**
+ * 重置租客密码请求
+ */
+export const resetTenantPasswordSchema = z.object({
+    newPassword: z.string().min(6, '新密码至少6位'),
+})
+
+export type ResetTenantPasswordInput = z.infer<typeof resetTenantPasswordSchema>
+
+/**
+ * 创建管理员请求
+ */
+export const createAdminSchema = z.object({
+    username: z.string().min(3, '用户名至少3位').max(20, '用户名最多20位'),
+    password: z.string().min(6, '密码至少6位'),
+})
+
+export type CreateAdminInput = z.infer<typeof createAdminSchema>
+
+/**
+ * 更新管理员资料请求
+ */
+export const updateAdminProfileSchema = z.object({
+    username: z.string().min(3, '用户名至少3位').max(20, '用户名最多20位'),
+})
+
+export type UpdateAdminProfileInput = z.infer<typeof updateAdminProfileSchema>
