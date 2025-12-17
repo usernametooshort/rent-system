@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 
 const client = axios.create({
-    baseURL: 'https://junited.synology.me:9898/api', // 硬编码以确保连接成功
+    baseURL: '/api', // 使用相对路径，通过 Nginx 转发
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
