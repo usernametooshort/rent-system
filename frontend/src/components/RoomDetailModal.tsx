@@ -8,9 +8,10 @@ interface RoomDetailModalProps {
     room: Room | null
     isOpen: boolean
     onClose: () => void
+    showCompensation?: boolean
 }
 
-const RoomDetailModal: React.FC<RoomDetailModalProps> = ({ room, isOpen, onClose }) => {
+const RoomDetailModal: React.FC<RoomDetailModalProps> = ({ room, isOpen, onClose, showCompensation = true }) => {
     if (!room) return null
 
     const coverImage = room.images?.[0]?.url
@@ -60,7 +61,9 @@ const RoomDetailModal: React.FC<RoomDetailModalProps> = ({ room, isOpen, onClose
                                         <CheckCircle size={16} className="text-green-500" />
                                         {app.name}
                                     </span>
-                                    <span className="text-xs text-gray-400">赔偿金 ¥{app.compensationPrice}</span>
+                                    {showCompensation && (
+                                        <span className="text-xs text-gray-400">赔偿金 ¥{app.compensationPrice}</span>
+                                    )}
                                 </div>
                             ))}
                             {(!room.appliances || room.appliances.length === 0) && (

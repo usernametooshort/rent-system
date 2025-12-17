@@ -70,6 +70,7 @@ const GuestHome: React.FC = () => {
                 room={selectedRoom}
                 isOpen={!!selectedRoom}
                 onClose={() => setSelectedRoom(null)}
+                showCompensation={false}
             />
         </div>
     )
