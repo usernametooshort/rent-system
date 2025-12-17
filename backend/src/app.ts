@@ -39,7 +39,11 @@ app.register(multipart, {
 // 静态文件服务 (用于访问上传的图片)
 app.register(fastifyStatic, {
     root: path.resolve(config.UPLOAD_DIR),
-    prefix: '/uploads/'
+    prefix: '/uploads/',
+    setHeaders: (res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    }
 })
 
 // 注册路由
