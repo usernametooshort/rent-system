@@ -98,7 +98,7 @@ const AdminRentPayments: React.FC = () => {
                         <div key={tenant.id} className="bg-white rounded-xl shadow-sm p-4">
                             <div className="flex justify-between items-center mb-3">
                                 <div>
-                                    <span className="font-bold text-lg">{tenant.room.roomNumber}室</span>
+                                    <span className="font-bold text-lg">{tenant.room?.roomNumber || '未绑定'}室</span>
                                     <span className="text-gray-500 ml-2">- {tenant.name}</span>
                                     <span className="text-sm text-gray-400 ml-2">{tenant.phone}</span>
                                 </div>
@@ -139,8 +139,8 @@ const AdminRentPayments: React.FC = () => {
                                                 })}
                                                 disabled={updateRentMutation.isPending}
                                                 className={`text-xs px-2 py-1 rounded ${record.paid
-                                                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                                        : 'bg-green-600 text-white hover:bg-green-700'
+                                                    ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                                    : 'bg-green-600 text-white hover:bg-green-700'
                                                     } disabled:opacity-50`}
                                             >
                                                 {record.paid ? '标记未缴' : '标记已缴'}

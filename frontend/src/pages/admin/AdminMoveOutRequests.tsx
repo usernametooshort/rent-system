@@ -92,7 +92,7 @@ const AdminMoveOutRequests: React.FC = () => {
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold">{req.tenant.room.roomNumber}室</span>
+                                            <span className="font-bold">{req.tenant?.room?.roomNumber || '?'}室</span>
                                             <span className="text-gray-500">-</span>
                                             <span className="text-gray-700">{req.tenant.name}</span>
                                             {getStatusBadge(req.status)}
@@ -138,7 +138,7 @@ const AdminMoveOutRequests: React.FC = () => {
                         {processingRequest && (
                             <div className="space-y-4">
                                 <div className="bg-gray-50 rounded-lg p-3 text-sm">
-                                    <div><strong>房间:</strong> {processingRequest.tenant.room.roomNumber}室</div>
+                                    <div><strong>房间:</strong> {processingRequest.tenant?.room?.roomNumber || '?'}室</div>
                                     <div><strong>租客:</strong> {processingRequest.tenant.name}</div>
                                     <div><strong>期望验房:</strong> {new Date(processingRequest.preferredInspectionDate).toLocaleDateString('zh-CN')}</div>
                                 </div>
