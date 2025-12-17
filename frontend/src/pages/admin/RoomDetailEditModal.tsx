@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '../../api/client'
 import { toast } from 'react-hot-toast'
 import { X, Plus, Trash2, Upload, Image as ImageIcon, Router, Lock } from 'lucide-react'
+import imageCompression from 'browser-image-compression'
 import { Room, Appliance } from '../../types'
 import { getImageUrl } from '../../utils/url'
 
@@ -95,8 +96,24 @@ const RoomDetailEditModal: React.FC<RoomDetailEditModalProps> = ({ isOpen, onClo
 
         setUploading(true)
         try {
+            // Compress image
+            let uploadFile = file
+            if (file.type.startsWith('image/')) {
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                    initialQuality: 0.8
+                }
+                try {
+                    uploadFile = await imageCompression(file, options)
+                } catch (error) {
+                    console.error('Compression failed, falling back to original:', error)
+                }
+            }
+
             const formData = new FormData()
-            formData.append('file', file)
+            formData.append('file', uploadFile)
             await client.post(`/upload/room-image?roomId=${roomId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             })

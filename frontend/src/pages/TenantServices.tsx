@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { Loader2, Wrench, Plus, Clock, Settings, CheckCircle, Camera, X, Image as ImageIcon } from 'lucide-react'
 import { Dialog } from '@headlessui/react'
 import { toast } from 'react-hot-toast'
+import imageCompression from 'browser-image-compression'
 import { getImageUrl } from '../utils/url'
 
 // 公告卡片
@@ -205,24 +206,44 @@ const TenantServices: React.FC = () => {
     }
 
     // 处理图片选择
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
         if (files.length + repairImages.length > 5) {
             toast.error('最多上传5张图片')
             return
         }
 
-        // 添加新图片
-        setRepairImages(prev => [...prev, ...files])
+        const compressedFiles: File[] = []
+        const newPreviewUrls: string[] = []
 
-        // 生成预览URL
-        files.forEach(file => {
-            const reader = new FileReader()
-            reader.onload = (e) => {
-                setImagePreviewUrls(prev => [...prev, e.target?.result as string])
+        try {
+            const options = {
+                maxSizeMB: 1, // Max file size 1MB (much better than 5-10MB)
+                maxWidthOrHeight: 1920, // Reasonable max resolution
+                useWebWorker: true,
+                initialQuality: 0.8 // Good balance of quality and size
             }
-            reader.readAsDataURL(file)
-        })
+
+            for (const file of files) {
+                // Compress if image
+                if (file.type.startsWith('image/')) {
+                    const compressedFile = await imageCompression(file, options)
+                    compressedFiles.push(compressedFile)
+                    // Create preview from compressed file to confirm it works
+                    newPreviewUrls.push(URL.createObjectURL(compressedFile))
+                } else {
+                    compressedFiles.push(file)
+                }
+            }
+
+            // 添加新图片
+            setRepairImages(prev => [...prev, ...compressedFiles])
+            setImagePreviewUrls(prev => [...prev, ...newPreviewUrls])
+
+        } catch (error) {
+            console.error('Image compression failed:', error)
+            toast.error('图片处理失败，请重试')
+        }
     }
 
 
