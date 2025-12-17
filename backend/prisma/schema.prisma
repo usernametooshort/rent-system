@@ -70,6 +70,8 @@ model Tenant {
   leaseDurationMonths Int
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
+  status              String       @default("active") // 'active' | 'moved_out'
+  checkOutDate        DateTime?    // Record when they moved out
   
   // 关联
   room                Room?

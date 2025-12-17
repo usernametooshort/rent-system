@@ -76,6 +76,7 @@ export type UpdateRentRecordInput = z.infer<typeof updateRentRecordSchema>
 export const tenantQuerySchema = z.object({
     page: z.string().transform(Number).optional().default('1'),
     limit: z.string().transform(Number).optional().default('20'),
+    status: z.string().optional(), // 'active' | 'moved_out'
 })
 
 export type TenantQueryInput = z.infer<typeof tenantQuerySchema>

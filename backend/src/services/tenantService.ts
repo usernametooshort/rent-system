@@ -21,8 +21,14 @@ export class TenantService {
         const limit = Number(query.limit) || 20
         const skip = (page - 1) * limit
 
+        const where: any = {}
+        if (query.status) {
+            where.status = query.status
+        }
+
         const [tenants, total] = await Promise.all([
             prisma.tenant.findMany({
+                where,
                 skip,
                 take: limit,
                 include: {
@@ -35,7 +41,7 @@ export class TenantService {
                 },
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.tenant.count()
+            prisma.tenant.count({ where })
         ])
 
         return {
@@ -84,23 +90,45 @@ export class TenantService {
         const existingTenant = await prisma.tenant.findUnique({
             where: { phone: data.phone }
         })
-        if (existingTenant) throw new ConflictError('该手机号已被注册')
 
-        // 3. 事务操作：创建租客 -> 更新房间状态
+        // 3. 事务操作：创建或更新租客 -> 更新房间状态
         const result = await prisma.$transaction(async (tx) => {
-            // 创建租客
-            const tenant = await tx.tenant.create({
-                data: {
-                    id: data.phone, // 使用手机号作为ID
-                    name: data.name,
-                    phone: data.phone,
-                    phoneLast6: data.phone.slice(-6),
-                    leaseStartDate: new Date(data.leaseStartDate),
-                    leaseDurationMonths: data.leaseDurationMonths,
-                    // 双向关联：Prisma 中 Room 定义了 relation 字段，只需 connect 即可
-                    // 注意：Room 是 optional 的，但创建时必须关联
+            let tenant;
+
+            if (existingTenant) {
+                // 如果租客已存在
+                if (existingTenant.status === 'active') {
+                    throw new ConflictError('该手机号已被注册且正在租房中')
                 }
-            })
+
+                // 如果是归档租客，进行"复活" (Re-renting)
+                tenant = await tx.tenant.update({
+                    where: { id: existingTenant.id },
+                    data: {
+                        name: data.name,
+                        // phone 保持不变
+                        // passwordHash 保持不变 (或者可以选择重置)
+                        leaseStartDate: new Date(data.leaseStartDate),
+                        leaseDurationMonths: data.leaseDurationMonths,
+                        status: 'active',
+                        checkOutDate: null, // 清除退租日期
+                        updatedAt: new Date()
+                    }
+                })
+            } else {
+                // 创建新租客
+                tenant = await tx.tenant.create({
+                    data: {
+                        id: data.phone, // 使用手机号作为ID
+                        name: data.name,
+                        phone: data.phone,
+                        phoneLast6: data.phone.slice(-6),
+                        leaseStartDate: new Date(data.leaseStartDate),
+                        leaseDurationMonths: data.leaseDurationMonths,
+                        status: 'active'
+                    }
+                })
+            }
 
             // 更新房间状态并关联租客，如果有密码则一并更新
             const roomUpdateData: any = {

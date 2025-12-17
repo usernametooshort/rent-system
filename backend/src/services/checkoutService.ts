@@ -24,7 +24,7 @@ export class CheckoutService {
     /**
      * 处理退租
      * 1. 记录退租信息
-     * 2. 删除租客
+     * 2. 归档租客 (Soft Delete)
      * 3. 更新房间状态为空置
      */
     async processCheckout(input: CheckoutInput) {
@@ -64,32 +64,19 @@ export class CheckoutService {
                 }
             })
 
-            // 2. 删除租客的所有租金记录
-            await tx.rentRecord.deleteMany({
-                where: { tenantId: tenant.id }
-            })
-
-            // 3. 删除租客的所有退租申请
-            await tx.moveOutRequest.deleteMany({
-                where: { tenantId: tenant.id }
-            })
-
-            // 4. 删除租客的所有报修申请（包括图片）
-            await tx.repairImage.deleteMany({
-                where: {
-                    repair: {
-                        tenantId: tenant.id
-                    }
+            // 2. 归档租客（而不是删除）
+            await tx.tenant.update({
+                where: { id: tenant.id },
+                data: {
+                    status: 'moved_out',
+                    checkOutDate: new Date(),
+                    // 解除与房间的关联
+                    room: { disconnect: true }
                 }
             })
-            await tx.repairRequest.deleteMany({
-                where: { tenantId: tenant.id }
-            })
 
-            // 5. 删除租客
-            await tx.tenant.delete({
-                where: { id: tenant.id }
-            })
+            // 注意：不再删除 RentRecord, MoveOutRequest, RepairRequest
+            // 它们将作为历史记录保留
 
             // 6. 更新房间状态
             await tx.room.update({

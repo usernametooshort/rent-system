@@ -6,10 +6,16 @@ import { toast } from 'react-hot-toast'
 
 const AdminTenants: React.FC = () => {
     const queryClient = useQueryClient()
+    const [statusFilter, setStatusFilter] = React.useState<'active' | 'history'>('active')
+
     const { data, isLoading } = useQuery({
-        queryKey: ['admin-tenants'],
+        queryKey: ['admin-tenants', statusFilter],
         queryFn: async () => {
-            const res = await client.get('/tenants')
+            const res = await client.get('/tenants', {
+                params: {
+                    status: statusFilter === 'history' ? 'moved_out' : 'active'
+                }
+            })
             return res.data.data.items
         }
     })
@@ -32,6 +38,26 @@ const AdminTenants: React.FC = () => {
     return (
         <div>
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="flex border-b border-gray-100">
+                    <button
+                        onClick={() => setStatusFilter('active')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${statusFilter === 'active'
+                            ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            }`}
+                    >
+                        在租 (Active)
+                    </button>
+                    <button
+                        onClick={() => setStatusFilter('history')}
+                        className={`flex-1 py-3 text-sm font-medium transition-colors ${statusFilter === 'history'
+                            ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                            }`}
+                    >
+                        历史归档 (History)
+                    </button>
+                </div>
                 <div className="divide-y divide-gray-100">
                     {data?.map((tenant: any) => (
                         <div key={tenant.id} className="p-4">
@@ -42,6 +68,11 @@ const AdminTenants: React.FC = () => {
                                         <Phone size={14} />
                                         {tenant.phone}
                                     </div>
+                                    {statusFilter === 'history' && tenant.checkOutDate && (
+                                        <div className="text-xs text-gray-400 mt-1">
+                                            退租于: {new Date(tenant.checkOutDate).toLocaleDateString()}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <div className="font-medium text-primary-600">
@@ -54,23 +85,25 @@ const AdminTenants: React.FC = () => {
                                     )}
                                     {/* Added buttons below the existing info */}
                                     <div className="flex justify-end gap-3 mt-2">
-                                        <button
-                                            onClick={() => {
-                                                const newPassword = prompt(`请输入租客 "${tenant.name}" 的新密码:`)
-                                                if (newPassword) {
-                                                    if (newPassword.length < 6) {
-                                                        toast.error('密码至少6位')
-                                                        return
+                                        {statusFilter === 'active' && (
+                                            <button
+                                                onClick={() => {
+                                                    const newPassword = prompt(`请输入租客 "${tenant.name}" 的新密码:`)
+                                                    if (newPassword) {
+                                                        if (newPassword.length < 6) {
+                                                            toast.error('密码至少6位')
+                                                            return
+                                                        }
+                                                        client.post(`/tenants/${tenant.id}/reset-password`, { newPassword })
+                                                            .then(() => toast.success('密码重置成功'))
+                                                            .catch((err) => toast.error(err.response?.data?.message || '重置失败'))
                                                     }
-                                                    client.post(`/tenants/${tenant.id}/reset-password`, { newPassword })
-                                                        .then(() => toast.success('密码重置成功'))
-                                                        .catch((err) => toast.error(err.response?.data?.message || '重置失败'))
-                                                }
-                                            }}
-                                            className="text-primary-600 hover:text-primary-900 text-sm"
-                                        >
-                                            重置密码
-                                        </button>
+                                                }}
+                                                className="text-primary-600 hover:text-primary-900 text-sm"
+                                            >
+                                                重置密码
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => {
                                                 if (confirm('确定要删除该租客吗？由于租客关联数据较多，建议先操作退租流程。')) {

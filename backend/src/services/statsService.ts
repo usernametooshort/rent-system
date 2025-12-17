@@ -10,9 +10,19 @@ export class StatsService {
         const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
         // 1. 获取所有在租租客
+        // 1. 获取所有租客（包括已归档，只要当月有账单）
         const tenants = await prisma.tenant.findMany({
             where: {
-                room: { isNot: null } // 有房间的才算
+                OR: [
+                    { status: 'active' }, // 在租
+                    {
+                        // 或者已归档但有当月账单
+                        status: 'moved_out',
+                        rentRecords: {
+                            some: { month: currentMonth }
+                        }
+                    }
+                ]
             },
             include: {
                 room: true,
@@ -28,10 +38,14 @@ export class StatsService {
         let totalCollected = 0
 
         for (const t of tenants) {
-            const roomRent = t.room?.rent || 0
-            totalExpected += roomRent
-
             const record = t.rentRecords[0]
+            // 如果有账单，以账单金额为准；如果没有则取房间租金（仅限 active）
+            const amount = record ? record.amount : (t.room?.rent || 0)
+
+            // 只有当月有应收金额（有账单 或 在租）时才计入总额
+            if (amount > 0) {
+                totalExpected += amount
+            }
             if (record?.paid) {
                 paid.push({
                     id: t.id,
@@ -46,7 +60,7 @@ export class StatsService {
                     id: t.id,
                     name: t.name,
                     roomNumber: t.room?.roomNumber,
-                    amount: roomRent // 默认为房间租金
+                    amount: amount // 使用计算出的金额
                 })
             }
         }
@@ -88,7 +102,7 @@ export class StatsService {
             }
         })
 
-        return records.map(r => ({
+        return records.map((r: any) => ({
             month: r.month,
             amount: r._sum.amount || 0
         }))
