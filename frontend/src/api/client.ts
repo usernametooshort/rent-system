@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 
 const client = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api', // 生产环境使用 VITE_API_URL，开发环境使用 /api (代理)
+    baseURL: 'https://junited.synology.me:9898/api', // 硬编码以确保连接成功
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
