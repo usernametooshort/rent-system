@@ -1,3 +1,4 @@
+# Cloudflare Pages Redirect Rules
 # Proxy API requests to backend
 /api/*  https://junited.synology.me:9898/api/:splat  200
 
