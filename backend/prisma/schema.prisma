@@ -65,6 +65,8 @@ model Tenant {
   name                String
   phone               String       @unique
   phoneLast6          String       // 手机后6位，用于登录验证
+  idCardNumber        String?      // 身份证号
+  idCardUrl           String?      // 身份证图片URL
   passwordHash        String?      // 登录密码（可选，默认使用手机后6位）
   leaseStartDate      DateTime
   leaseDurationMonths Int
