@@ -28,6 +28,24 @@ export async function repairRoutes(fastify: FastifyInstance) {
         reply.send({ success: true, data: result })
     })
 
+    // 删除报修 (租客)
+    fastify.delete('/:id', {
+        preHandler: [authenticate, requireRole('tenant')]
+    }, async (request, reply) => {
+        const { id } = request.params as { id: string }
+        await repairService.deleteRequest(id, request.user!.sub)
+        reply.send({ success: true })
+    })
+
+    // 编辑报修 (租客)
+    fastify.put('/my/:id', {
+        preHandler: [authenticate, requireRole('tenant')]
+    }, async (request, reply) => {
+        const { id } = request.params as { id: string }
+        const result = await repairService.updateRequest(id, request.user!.sub, request.body as any)
+        reply.send({ success: true, data: result })
+    })
+
     // 处理报修 (管理员)
     fastify.put('/:id', {
         preHandler: [authenticate, adminOnly]

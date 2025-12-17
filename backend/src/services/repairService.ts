@@ -122,6 +122,58 @@ export class RepairService {
             include: { images: true }
         })
     }
+
+    /**
+     * 删除报修 (仅限租客本人且状态为 pending)
+     */
+    async deleteRequest(id: string, tenantId: string) {
+        const request = await prisma.repairRequest.findUnique({ where: { id } })
+        if (!request) throw new NotFoundError('报修申请不存在')
+        if (request.tenantId !== tenantId) throw new NotFoundError('无权操作此报修')
+        if (request.status !== 'pending') throw new ValidationError('只能删除待处理的报修')
+
+        return prisma.repairRequest.delete({ where: { id } })
+    }
+
+    /**
+     * 更新报修 (仅限租客本人且状态为 pending)
+     */
+    async updateRequest(id: string, tenantId: string, data: CreateRepairInput) {
+        const request = await prisma.repairRequest.findUnique({ where: { id } })
+        if (!request) throw new NotFoundError('报修申请不存在')
+        if (request.tenantId !== tenantId) throw new NotFoundError('无权操作此报修')
+        if (request.status !== 'pending') throw new ValidationError('只能编辑待处理的报修')
+
+        return prisma.$transaction(async (tx) => {
+            // 更新基本信息
+            const updated = await tx.repairRequest.update({
+                where: { id },
+                data: {
+                    title: data.title?.trim(),
+                    description: data.description?.trim()
+                }
+            })
+
+            // 如果提供了新图片列表，则替换原有图片
+            // (简单策略：先删后加，或者根据需求增量。这里采用全量替换以匹配前端逻辑)
+            if (data.imageUrls) {
+                await tx.repairImage.deleteMany({ where: { repairId: id } })
+                if (data.imageUrls.length > 0) {
+                    await tx.repairImage.createMany({
+                        data: data.imageUrls.map(url => ({
+                            url,
+                            repairId: id
+                        }))
+                    })
+                }
+            }
+
+            return tx.repairRequest.findUnique({
+                where: { id },
+                include: { images: true }
+            })
+        })
+    }
 }
 
 export const repairService = new RepairService()

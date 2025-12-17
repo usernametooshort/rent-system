@@ -48,7 +48,7 @@ const MoveOutRequestCard = ({ item }: { item: any }) => {
 }
 
 // 报修申请状态卡片
-const RepairRequestCard = ({ item }: { item: any }) => {
+const RepairRequestCard = ({ item, onEdit, onDelete }: { item: any, onEdit: (item: any) => void, onDelete: (id: string) => void }) => {
     const statusMap: any = {
         pending: { text: '待处理', icon: Clock, color: 'text-yellow-700 bg-yellow-100' },
         processing: { text: '处理中', icon: Settings, color: 'text-blue-700 bg-blue-100' },
@@ -64,11 +64,35 @@ const RepairRequestCard = ({ item }: { item: any }) => {
                     <Wrench size={16} className="text-gray-400" />
                     <span className="font-medium text-gray-900">{item.title}</span>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${status.color}`}>
-                    <Icon size={12} /> {status.text}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${status.color}`}>
+                        <Icon size={12} /> {status.text}
+                    </span>
+                    {item.status === 'pending' && (
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => onEdit(item)}
+                                className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-primary-600 transition-colors"
+                            >
+                                <Settings size={14} className="rotate-90" /> {/* Reuse icon for edit or import Edit2 */}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm('确定取消该报修申请吗？')) onDelete(item.id)
+                                }}
+                                className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
             <div className="text-sm text-gray-500 mb-1">{item.description}</div>
+
+            {/* Show images count or preview if needed, keeping simple matching existing UI */}
+
             <div className="text-xs text-gray-400">
                 提交于 {format(new Date(item.createdAt), 'yyyy-MM-dd HH:mm')}
             </div>
@@ -81,13 +105,30 @@ const RepairRequestCard = ({ item }: { item: any }) => {
     )
 }
 
+import { Loader2, Wrench, Plus, Clock, Settings, CheckCircle, Camera, X, Image as ImageIcon, Edit2, Trash2 } from 'lucide-react'
+import { Dialog } from '@headlessui/react'
+import { toast } from 'react-hot-toast'
+import { getImageUrl } from '../utils/url'
+
+// ... (AnnouncementCard and MoveOutRequestCard remain unchanged, omitted for brevity if possible basically I am relying on the user context providing only the changed parts but since I am replacing I must be careful.
+// Wait, I cannot easily skip lines in block replacement efficiently without strict line numbers.
+// I will just add the icon imports to the existing line 5 and the new state state line 87.
+// Actually, earlier I replaced RepairRequestCard which used Settings and X. I should make sure I import Edit2 and Trash2 if I use them.
+// In the previous step I reused Settings and X. Let's stick to that to minimize import changes or update imports properly.
+// Let's update imports to include Edit2 and Trash2 for better UI.
+
+// ... code ...
+// I will just perform a specific replacement for the imports and the state.
+
 const TenantServices: React.FC = () => {
     const queryClient = useQueryClient()
     const [isRepairModalOpen, setIsRepairModalOpen] = useState(false)
+    const [editRepairId, setEditRepairId] = useState<string | null>(null) // New State
     const [repairTitle, setRepairTitle] = useState('')
     const [repairDesc, setRepairDesc] = useState('')
     const [repairImages, setRepairImages] = useState<File[]>([])
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([])
+    const [existingImages, setExistingImages] = useState<{ id: string, url: string }[]>([]) // Handle existing images for edit
     const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -118,24 +159,63 @@ const TenantServices: React.FC = () => {
         }
     })
 
-    // 提交报修
+    // 提交/更新报修
     const submitRepairMutation = useMutation({
         mutationFn: async (data: { title: string; description: string; imageUrls?: string[] }) => {
-            await client.post('/repair-requests', data)
+            if (editRepairId) {
+                // Update
+                await client.put(`/repair-requests/my/${editRepairId}`, data)
+            } else {
+                // Create
+                await client.post('/repair-requests', data)
+            }
         },
         onSuccess: () => {
-            toast.success('报修提交成功')
+            toast.success(editRepairId ? '报修已更新' : '报修提交成功')
             queryClient.invalidateQueries({ queryKey: ['my-repair-requests'] })
-            setIsRepairModalOpen(false)
-            setRepairTitle('')
-            setRepairDesc('')
-            setRepairImages([])
-            setImagePreviewUrls([])
+            handleCloseModal()
         },
         onError: (err: any) => {
             toast.error(err.response?.data?.error?.message || '提交失败')
         }
     })
+
+    // 删除报修
+    const deleteRepairMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await client.delete(`/repair-requests/${id}`)
+        },
+        onSuccess: () => {
+            toast.success('报修已取消')
+            queryClient.invalidateQueries({ queryKey: ['my-repair-requests'] })
+        },
+        onError: (err: any) => {
+            toast.error(err.response?.data?.error?.message || '删除失败')
+        }
+    })
+
+    const handleCloseModal = () => {
+        setIsRepairModalOpen(false)
+        setEditRepairId(null)
+        setRepairTitle('')
+        setRepairDesc('')
+        setRepairImages([])
+        setImagePreviewUrls([])
+        setExistingImages([])
+    }
+
+    const handleEditClick = (item: any) => {
+        setEditRepairId(item.id)
+        setRepairTitle(item.title)
+        setRepairDesc(item.description)
+        setExistingImages(item.images || [])
+        // Existing images need to be handled carefully in UI and submission
+        // For simplicity, we might just show them and allow adding more?
+        // Or we convert them to previewUrls? No, previewUrls are local strings.
+        // Let's separate existingImages display.
+
+        setIsRepairModalOpen(true)
+    }
 
     // 处理图片选择
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,7 +254,11 @@ const TenantServices: React.FC = () => {
             setIsUploading(true)
             let imageUrls: string[] = []
 
-            // 上传图片
+            // 保留的旧图片 (Check logic: if we allow deleting existing images in UI, 
+            // we should likely filter existingImages. For now let's assume all strictly filtered by UI state)
+            imageUrls = existingImages.map(img => img.url)
+
+            // 上传新图片
             if (repairImages.length > 0) {
                 for (const file of repairImages) {
                     const formData = new FormData()
@@ -186,7 +270,7 @@ const TenantServices: React.FC = () => {
                 }
             }
 
-            // 提交报修
+            // 提交
             submitRepairMutation.mutate({
                 title: repairTitle.trim(),
                 description: repairDesc.trim(),
@@ -196,6 +280,16 @@ const TenantServices: React.FC = () => {
             toast.error('图片上传失败')
         } finally {
             setIsUploading(false)
+        }
+    }
+
+    // 移除图片 (支持移除新上传的 和 已存在的)
+    const handleRemoveImage = (index: number, isExisting: boolean = false) => {
+        if (isExisting) {
+            setExistingImages(prev => prev.filter((_, i) => i !== index))
+        } else {
+            setRepairImages(prev => prev.filter((_, i) => i !== index))
+            setImagePreviewUrls(prev => prev.filter((_, i) => i !== index))
         }
     }
 
@@ -213,7 +307,10 @@ const TenantServices: React.FC = () => {
 
             {/* 报修入口按钮 */}
             <button
-                onClick={() => setIsRepairModalOpen(true)}
+                onClick={() => {
+                    handleCloseModal() // Ensure clear state
+                    setIsRepairModalOpen(true)
+                }}
                 className="w-full mb-6 bg-primary-600 text-white py-3 rounded-xl font-medium hover:bg-primary-700 flex items-center justify-center gap-2"
             >
                 <Wrench size={18} /> 提交报修
@@ -223,7 +320,14 @@ const TenantServices: React.FC = () => {
             <div className="mb-6">
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">我的报修</h3>
                 {repairRequests?.length > 0 ? (
-                    repairRequests.map((req: any) => <RepairRequestCard key={req.id} item={req} />)
+                    repairRequests.map((req: any) => (
+                        <RepairRequestCard
+                            key={req.id}
+                            item={req}
+                            onEdit={handleEditClick}
+                            onDelete={(id) => deleteRepairMutation.mutate(id)}
+                        />
+                    ))
                 ) : (
                     <div className="text-center text-gray-400 text-sm py-4 bg-white rounded-xl">无报修记录</div>
                 )}
@@ -250,12 +354,12 @@ const TenantServices: React.FC = () => {
             </div>
 
             {/* 报修弹窗 */}
-            <Dialog open={isRepairModalOpen} onClose={() => setIsRepairModalOpen(false)} className="relative z-50">
+            <Dialog open={isRepairModalOpen} onClose={handleCloseModal} className="relative z-50">
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
                     <Dialog.Panel className="bg-white rounded-xl p-6 max-w-sm w-full">
                         <Dialog.Title className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <Wrench size={20} /> 提交报修
+                            <Wrench size={20} /> {editRepairId ? '编辑报修' : '提交报修'}
                         </Dialog.Title>
 
                         <div className="space-y-4">
@@ -290,12 +394,27 @@ const TenantServices: React.FC = () => {
 
                                 {/* 图片预览网格 */}
                                 <div className="grid grid-cols-4 gap-2 mb-2">
+                                    {/* Existing Images */}
+                                    {existingImages.map((img, index) => (
+                                        <div key={`exist-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                                            <img src={getImageUrl(img.url)} alt="" className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(index, true)}
+                                                className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center"
+                                            >
+                                                <X size={12} className="text-white" />
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {/* New Images */}
                                     {imagePreviewUrls.map((url, index) => (
-                                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                                        <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                                             <img src={getImageUrl(url)} alt="" className="w-full h-full object-cover" />
                                             <button
                                                 type="button"
-                                                onClick={() => handleRemoveImage(index)}
+                                                onClick={() => handleRemoveImage(index, false)}
                                                 className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center"
                                             >
                                                 <X size={12} className="text-white" />
@@ -304,7 +423,7 @@ const TenantServices: React.FC = () => {
                                     ))}
 
                                     {/* 添加图片按钮 */}
-                                    {repairImages.length < 5 && (
+                                    {existingImages.length + repairImages.length < 5 && (
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
@@ -332,11 +451,11 @@ const TenantServices: React.FC = () => {
                                 disabled={submitRepairMutation.isPending || isUploading}
                                 className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
                             >
-                                {isUploading ? '上传图片中...' : submitRepairMutation.isPending ? '提交中...' : '提交报修'}
+                                {isUploading ? '上传图片中...' : submitRepairMutation.isPending ? '提交中...' : (editRepairId ? '保存修改' : '提交报修')}
                             </button>
 
                             <button
-                                onClick={() => setIsRepairModalOpen(false)}
+                                onClick={handleCloseModal}
                                 className="w-full text-gray-500 text-sm py-2"
                             >
                                 取消
