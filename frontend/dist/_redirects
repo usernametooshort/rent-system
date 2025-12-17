@@ -1,0 +1,5 @@
+# Cloudflare Pages Redirect Rules
+# API is connected directly via CORS, no proxy needed here.
+
+# Fallback for SPA routing
+/*  /index.html  200

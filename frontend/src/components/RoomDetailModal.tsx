@@ -2,6 +2,7 @@ import React from 'react'
 import { Dialog } from '@headlessui/react'
 import { Room } from '../types'
 import { X, CheckCircle } from 'lucide-react'
+import { getImageUrl } from '../utils/url'
 
 interface RoomDetailModalProps {
     room: Room | null
@@ -13,7 +14,7 @@ const RoomDetailModal: React.FC<RoomDetailModalProps> = ({ room, isOpen, onClose
     if (!room) return null
 
     const coverImage = room.images?.[0]?.url
-        ? room.images[0].url
+        ? getImageUrl(room.images[0].url)
         : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
 
     return (

@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { Loader2, Wrench, Plus, Clock, Settings, CheckCircle, Camera, X, Image as ImageIcon } from 'lucide-react'
 import { Dialog } from '@headlessui/react'
 import { toast } from 'react-hot-toast'
+import { getImageUrl } from '../utils/url'
 
 // 公告卡片
 const AnnouncementCard = ({ item }: { item: any }) => (
@@ -291,7 +292,7 @@ const TenantServices: React.FC = () => {
                                 <div className="grid grid-cols-4 gap-2 mb-2">
                                     {imagePreviewUrls.map((url, index) => (
                                         <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                                            <img src={url} alt="" className="w-full h-full object-cover" />
+                                            <img src={getImageUrl(url)} alt="" className="w-full h-full object-cover" />
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveImage(index)}

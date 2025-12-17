@@ -5,6 +5,7 @@ import client from '../../api/client'
 import { toast } from 'react-hot-toast'
 import { X, Plus, Trash2, Upload, Image as ImageIcon, Router, Lock } from 'lucide-react'
 import { Room, Appliance } from '../../types'
+import { getImageUrl } from '../../utils/url'
 
 interface RoomDetailEditModalProps {
     isOpen: boolean
@@ -331,7 +332,7 @@ const RoomDetailEditModal: React.FC<RoomDetailEditModalProps> = ({ isOpen, onClo
                                     {room.images?.map((img: any) => (
                                         <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden bg-gray-100">
                                             <img
-                                                src={img.url}
+                                                src={getImageUrl(img.url)}
                                                 alt="房屋图片"
                                                 className="w-full h-full object-cover"
                                             />

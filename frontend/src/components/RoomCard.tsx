@@ -1,6 +1,7 @@
 import React from 'react'
 import { Room } from '../types'
 import { MapPin, Home, Info } from 'lucide-react'
+import { getImageUrl } from '../utils/url'
 
 interface RoomCardProps {
     room: Room
@@ -10,7 +11,7 @@ interface RoomCardProps {
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
     // 获取封面图，如果没有则使用占位图
     const coverImage = room.images?.[0]?.url
-        ? room.images[0].url
+        ? getImageUrl(room.images[0].url)
         : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80'
 
     return (

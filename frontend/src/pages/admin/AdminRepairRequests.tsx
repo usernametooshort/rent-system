@@ -4,6 +4,7 @@ import client from '../../api/client'
 import { toast } from 'react-hot-toast'
 import { Wrench, Clock, CheckCircle, Settings } from 'lucide-react'
 import { Dialog } from '@headlessui/react'
+import { getImageUrl } from '../../utils/url'
 
 interface RepairRequest {
     id: string
@@ -113,10 +114,10 @@ const AdminRepairRequests: React.FC = () => {
                                                 {req.images.map((img) => (
                                                     <img
                                                         key={img.id}
-                                                        src={img.url}
+                                                        src={getImageUrl(img.url)}
                                                         alt="报修图片"
                                                         className="h-20 w-20 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-90"
-                                                        onClick={() => setPreviewImage(img.url)}
+                                                        onClick={() => setPreviewImage(getImageUrl(img.url))}
                                                     />
                                                 ))}
                                             </div>
