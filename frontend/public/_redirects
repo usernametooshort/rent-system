@@ -1,0 +1,8 @@
+# Proxy API requests to backend
+/api/*  https://junited.synology.me:9898/api/:splat  200
+
+# Proxy Uploads to backend
+/uploads/*  https://junited.synology.me:9898/uploads/:splat  200
+
+# Fallback for SPA routing
+/*  /index.html  200
