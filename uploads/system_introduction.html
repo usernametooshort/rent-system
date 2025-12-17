@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统介绍 (v1.0)</title>
+    
+<style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    h1, h2, h3 { color: #1a1a1a; }
+    h1 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; }
+    h2 { border-bottom: 1px solid #eaeaea; padding-bottom: 8px; margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    th { background-color: #f8f9fa; font-weight: 600; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    code { background-color: #f1f3f5; padding: 2px 5px; border-radius: 4px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace; font-size: 0.9em; }
+    pre { background-color: #f1f3f5; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    pre code { background-color: transparent; padding: 0; }
+    blockquote { border-left: 4px solid #4dabf7; margin: 0; padding-left: 20px; color: #555; background-color: #e7f5ff; padding: 10px 20px; border-radius: 4px; }
+    img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    @media print {
+        body { max-width: 100%; padding: 0; }
+        pre, blockquote { page-break-inside: avoid; }
+    }
+</style>
+
+</head>
+<body>
+    <h1>🏠 房屋租赁管理系统 (v1.0)</h1>
+<blockquote>
+<p>一款面向小型房东的移动优先租赁管理平台，支持房源、租客、租金、报修等全流程管理。</p>
+</blockquote>
+<hr />
+<h2>📱 系统概览</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>目标用户</strong></td>
+<td>小型房东（个人出租1-50间房）</td>
+</tr>
+<tr>
+<td><strong>设计理念</strong></td>
+<td>移动优先、简洁易用</td>
+</tr>
+<tr>
+<td><strong>访问地址</strong></td>
+<td><code>http://junited.synology.me:8280</code></td>
+</tr>
+<tr>
+<td><strong>技术栈</strong></td>
+<td>React + Fastify + SQLite + Docker</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>👥 角色与权限</h2>
+<pre><code class="language-mermaid">graph LR
+    A[游客] --&gt;|查看房源| B[可租房间列表]
+    C[租客] --&gt;|登录| D[我的房间/服务]
+    E[管理员] --&gt;|登录| F[房源/服务/统计]
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>登录方式</th>
+<th>主要功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>游客</strong></td>
+<td>无需登录</td>
+<td>浏览可租房源</td>
+</tr>
+<tr>
+<td><strong>租客</strong></td>
+<td>手机号 + 房间号</td>
+<td>查看房间、提交报修/退租</td>
+</tr>
+<tr>
+<td><strong>管理员</strong></td>
+<td>用户名 + 密码</td>
+<td>全部管理功能</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🔧 管理员功能详解</h2>
+<h3>1️⃣ 房源管理 (<code>/admin</code>)</h3>
+<p>管理所有房间信息，是系统核心模块。</p>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>房间列表</strong></td>
+<td>显示房号、租金、押金、状态（空置/已租）</td>
+</tr>
+<tr>
+<td><strong>添加房间</strong></td>
+<td>设置房号、月租金、押金</td>
+</tr>
+<tr>
+<td><strong>编辑房间</strong></td>
+<td>修改房间基本信息</td>
+</tr>
+<tr>
+<td><strong>房间详情</strong></td>
+<td>管理图片、电器设备（含赔偿价格）</td>
+</tr>
+<tr>
+<td><strong>办理入住</strong></td>
+<td>绑定租客（姓名/手机/身份证/起租日期）</td>
+</tr>
+<tr>
+<td><strong>办理退租</strong></td>
+<td>3步向导完成退租结算</td>
+</tr>
+</tbody>
+</table>
+<h4>退租流程（重点功能）</h4>
+<pre><code>┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  电器检查   │ →  │  扣款明细   │ →  │  确认退租   │
+│ 勾选完好/损坏│    │ 自动+自定义  │    │ 押金退还计算│
+└─────────────┘    └─────────────┘    └─────────────┘
+</code></pre>
+<ul>
+<li><strong>电器检查</strong>: 根据房间配置的电器，逐项勾选完好或损坏</li>
+<li><strong>扣款明细</strong>: 自动计算损坏赔偿 + 可添加自定义扣款项</li>
+<li><strong>确认退租</strong>: 显示退还金额，确认后自动清理租客数据</li>
+</ul>
+<hr />
+<h3>2️⃣ 服务管理 (<code>/admin/services</code>)</h3>
+<p>整合所有服务类功能，包含 5 个 Tab：</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>功能</th>
+<th>操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>租客</strong></td>
+<td>租客列表</td>
+<td>查看联系方式、房间、逾期状态</td>
+</tr>
+<tr>
+<td><strong>公告</strong></td>
+<td>公告管理</td>
+<td>发布/编辑/删除公告</td>
+</tr>
+<tr>
+<td><strong>退租申请</strong></td>
+<td>审批退租</td>
+<td>同意/拒绝租客的退租申请</td>
+</tr>
+<tr>
+<td><strong>租金管理</strong></td>
+<td>收租记录</td>
+<td>标记已缴/未缴状态</td>
+</tr>
+<tr>
+<td><strong>报修管理</strong></td>
+<td>报修处理</td>
+<td>查看详情/图片，标记处理状态</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>3️⃣ 数据统计 (<code>/admin/stats</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>总房源数</td>
+<td>系统中所有房间</td>
+</tr>
+<tr>
+<td>已租数</td>
+<td>当前有租客的房间</td>
+</tr>
+<tr>
+<td>空置数</td>
+<td>可出租的房间</td>
+</tr>
+<tr>
+<td>本月收入</td>
+<td>本月已收租金总额</td>
+</tr>
+<tr>
+<td>待处理事项</td>
+<td>未处理的退租/报修申请</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>👤 租客功能详解</h2>
+<h3>1️⃣ 我的房间 (<code>/tenant</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>房间概览</strong></td>
+<td>房号、月租金、押金、起租日期</td>
+</tr>
+<tr>
+<td><strong>租金记录</strong></td>
+<td>近6个月账单，缴费状态</td>
+</tr>
+<tr>
+<td><strong>房屋配置</strong></td>
+<td>房间内电器及赔偿基准</td>
+</tr>
+<tr>
+<td><strong>预约退租</strong></td>
+<td>选择期望验房日期提交申请</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>2️⃣ 租客服务 (<code>/tenant/services</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>功能</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>公告查看</strong></td>
+<td>房东发布的通知</td>
+</tr>
+<tr>
+<td><strong>提交报修</strong></td>
+<td>填写问题描述 + 上传最多5张图片</td>
+</tr>
+<tr>
+<td><strong>退租申请</strong></td>
+<td>提交退租请求</td>
+</tr>
+<tr>
+<td><strong>申请状态</strong></td>
+<td>查看报修/退租处理进度</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🗄️ 数据模型</h2>
+<pre><code class="language-mermaid">erDiagram
+    Room ||--o{ Appliance : has
+    Room ||--o{ RoomImage : has
+    Room ||--o| Tenant : occupies
+    Tenant ||--o{ RentRecord : pays
+    Tenant ||--o{ RepairRequest : submits
+    Tenant ||--o{ MoveOutRequest : requests
+    RepairRequest ||--o{ RepairImage : includes
+    Room ||--o{ CheckoutRecord : generates
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>中文名</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Room</code></td>
+<td>房间</td>
+<td>房号、租金、押金、状态</td>
+</tr>
+<tr>
+<td><code>Tenant</code></td>
+<td>租客</td>
+<td>姓名、手机、身份证、起租日期</td>
+</tr>
+<tr>
+<td><code>Appliance</code></td>
+<td>电器</td>
+<td>名称、赔偿价格</td>
+</tr>
+<tr>
+<td><code>RoomImage</code></td>
+<td>房间图片</td>
+<td>图片URL、排序</td>
+</tr>
+<tr>
+<td><code>RentRecord</code></td>
+<td>租金记录</td>
+<td>月份、金额、付款状态</td>
+</tr>
+<tr>
+<td><code>RepairRequest</code></td>
+<td>报修请求</td>
+<td>描述、状态、图片</td>
+</tr>
+<tr>
+<td><code>MoveOutRequest</code></td>
+<td>退租申请</td>
+<td>期望日期、审批状态</td>
+</tr>
+<tr>
+<td><code>CheckoutRecord</code></td>
+<td>退租结算</td>
+<td>押金退还、扣款明细</td>
+</tr>
+<tr>
+<td><code>Announcement</code></td>
+<td>公告</td>
+<td>标题、内容</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🔐 安全机制</h2>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>JWT 认证</strong></td>
+<td>访问令牌(15min) + 刷新令牌(7天)</td>
+</tr>
+<tr>
+<td><strong>RBAC 授权</strong></td>
+<td>基于角色的访问控制</td>
+</tr>
+<tr>
+<td><strong>密码加密</strong></td>
+<td>bcrypt 哈希存储</td>
+</tr>
+<tr>
+<td><strong>CORS 保护</strong></td>
+<td>跨域请求白名单</td>
+</tr>
+<tr>
+<td><strong>请求限流</strong></td>
+<td>100次/分钟</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🛠️ 技术架构</h2>
+<pre><code>┌─────────────────────────────────────────────┐
+│                  Nginx                       │
+│              (端口 8280)                     │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ┌─────────────┐      ┌─────────────────┐  │
+│  │   React     │      │    Fastify      │  │
+│  │  Frontend   │ ───▶ │    Backend      │  │
+│  │  (静态文件)  │      │   (端口 3000)   │  │
+│  └─────────────┘      └────────┬────────┘  │
+│                                 │           │
+│                        ┌───────▼────────┐  │
+│                        │     SQLite     │  │
+│                        │   (文件数据库)  │  │
+│                        └────────────────┘  │
+│                                             │
+└─────────────────────────────────────────────┘
+                    Docker Compose
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>技术</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>前端</strong></td>
+<td>React + TypeScript + Vite</td>
+<td>移动优先响应式设计</td>
+</tr>
+<tr>
+<td><strong>UI库</strong></td>
+<td>Tailwind CSS + Headless UI</td>
+<td>现代化组件</td>
+</tr>
+<tr>
+<td><strong>后端</strong></td>
+<td>Fastify + TypeScript</td>
+<td>高性能 API 服务</td>
+</tr>
+<tr>
+<td><strong>ORM</strong></td>
+<td>Prisma</td>
+<td>类型安全的数据库访问</td>
+</tr>
+<tr>
+<td><strong>数据库</strong></td>
+<td>SQLite</td>
+<td>轻量级文件数据库</td>
+</tr>
+<tr>
+<td><strong>部署</strong></td>
+<td>Docker Compose</td>
+<td>一键部署</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>📋 API 端点一览</h2>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>端点</th>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>认证</td>
+<td><code>/auth/login</code></td>
+<td>POST</td>
+<td>登录</td>
+</tr>
+<tr>
+<td>认证</td>
+<td><code>/auth/refresh</code></td>
+<td>POST</td>
+<td>刷新令牌</td>
+</tr>
+<tr>
+<td>房间</td>
+<td><code>/rooms</code></td>
+<td>GET/POST</td>
+<td>列表/创建</td>
+</tr>
+<tr>
+<td>房间</td>
+<td><code>/rooms/:id</code></td>
+<td>GET/PUT/DELETE</td>
+<td>详情/更新/删除</td>
+</tr>
+<tr>
+<td>租客</td>
+<td><code>/tenants</code></td>
+<td>GET/POST</td>
+<td>列表/创建</td>
+</tr>
+<tr>
+<td>公告</td>
+<td><code>/announcements</code></td>
+<td>GET/POST/PUT/DELETE</td>
+<td>CRUD</td>
+</tr>
+<tr>
+<td>报修</td>
+<td><code>/repair-requests</code></td>
+<td>GET/POST/PUT</td>
+<td>列表/创建/处理</td>
+</tr>
+<tr>
+<td>退租</td>
+<td><code>/move-out-requests</code></td>
+<td>GET/POST/PUT</td>
+<td>列表/申请/审批</td>
+</tr>
+<tr>
+<td>退租结算</td>
+<td><code>/checkout/:roomId</code></td>
+<td>POST</td>
+<td>办理退租</td>
+</tr>
+<tr>
+<td>上传</td>
+<td><code>/upload/image</code></td>
+<td>POST</td>
+<td>通用图片上传</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>🚀 部署方式</h2>
+<pre><code class="language-bash"># 一键部署
+./deploy.sh
+
+# 系统将在以下地址可用
+# http://localhost:8280
+</code></pre>
+<p>环境变量配置 (<code>.env.production</code>):</p>
+<pre><code>ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_password
+JWT_SECRET=your_jwt_secret_16chars
+JWT_REFRESH_SECRET=your_refresh_secret_16chars
+</code></pre>
+<hr />
+<h2>📱 使用流程</h2>
+<h3>管理员流程</h3>
+<pre><code>登录 → 添加房源 → 配置电器/图片 → 办理入住 → 收租 → 处理报修 → 办理退租
+</code></pre>
+<h3>租客流程</h3>
+<pre><code>登录 → 查看房间 → 查看账单 → 提交报修/退租 → 等待处理
+</code></pre>
+</body>
+</html>

@@ -1,0 +1,154 @@
+// 房屋租赁管理系统 - Prisma Schema
+// 数据库：SQLite（适合 NAS 私有部署，单文件备份）
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 管理员 ============
+model Admin {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ============ 房屋 ============
+model Room {
+  id          String      @id @default(cuid())
+  roomNumber  String      @unique
+  rent        Float
+  deposit     Float
+  status      String      @default("vacant") // 'vacant' | 'rented'
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // 关联
+  appliances  Appliance[]
+  images      RoomImage[]
+  tenant      Tenant?     @relation(fields: [tenantId], references: [id])
+  tenantId    String?     @unique
+}
+
+// ============ 家电 ============
+model Appliance {
+  id                 String @id @default(cuid())
+  name               String
+  compensationPrice  Float
+  
+  room               Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId             String
+}
+
+// ============ 房屋图片 ============
+model RoomImage {
+  id        String   @id @default(cuid())
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId    String
+}
+
+// ============ 租客 ============
+model Tenant {
+  id                  String       @id // 使用手机号作为 ID
+  name                String
+  phone               String       @unique
+  phoneLast6          String       // 手机后6位，用于登录验证
+  leaseStartDate      DateTime
+  leaseDurationMonths Int
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  
+  // 关联
+  room                Room?
+  rentRecords         RentRecord[]
+  moveOutRequests     MoveOutRequest[]
+  repairRequests      RepairRequest[]
+}
+
+// ============ 租金记录 ============
+model RentRecord {
+  id        String    @id @default(cuid())
+  month     String    // YYYY-MM 格式
+  amount    Float
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantId  String
+  
+  @@unique([tenantId, month])
+}
+
+// ============ 公告 ============
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ============ 退租申请 ============
+model MoveOutRequest {
+  id                      String   @id @default(cuid())
+  preferredInspectionDate DateTime
+  status                  String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  note                    String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  
+  tenant                  Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId                String
+}
+
+// ============ 报修申请 ============
+model RepairRequest {
+  id          String        @id @default(cuid())
+  title       String        // 报修标题
+  description String        // 详细描述
+  status      String        @default("pending") // 'pending' | 'processing' | 'completed'
+  note        String?       // 处理备注
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  tenant      Tenant        @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  images      RepairImage[]
+}
+
+// ============ 报修图片 ============
+model RepairImage {
+  id        String        @id @default(cuid())
+  url       String
+  createdAt DateTime      @default(now())
+  
+  repair    RepairRequest @relation(fields: [repairId], references: [id], onDelete: Cascade)
+  repairId  String
+}
+
+// ============ 退租记录 ============
+model CheckoutRecord {
+  id                String   @id @default(cuid())
+  depositAmount     Float    // 应退押金
+  depositRefunded   Float    // 实退押金
+  deductions        String?  // 扣款明细 JSON [{ name: string, amount: number }]
+  keyReturned       Boolean  @default(false)
+  applianceCheckResult String? // 电器检查结果 JSON [{ name: string, ok: boolean, note: string }]
+  checkoutDate      DateTime @default(now())
+  note              String?
+  
+  tenantName        String   // 保存租客姓名（因为租客记录会被删除）
+  tenantPhone       String   // 保存租客电话
+  roomNumber        String   // 保存房间号
+}

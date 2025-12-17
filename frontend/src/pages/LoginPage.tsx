@@ -1,0 +1,142 @@
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import client from '../api/client'
+import { toast } from 'react-hot-toast'
+import { Tab } from '@headlessui/react'
+import clsx from 'clsx'
+
+const LoginPage: React.FC = () => {
+    const navigate = useNavigate()
+    const { login } = useAuth()
+    const [loading, setLoading] = useState(false)
+
+    // 管理员表单
+    const handleAdminLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setLoading(true)
+        const formData = new FormData(e.currentTarget)
+
+        try {
+            const res = await client.post('/auth/admin-login', Object.fromEntries(formData))
+            if (res.data.success) {
+                login(res.data.data)
+                navigate('/admin')
+                toast.success('登录成功')
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || '登录失败')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // 租客表单
+    const handleTenantLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setLoading(true)
+        const formData = new FormData(e.currentTarget)
+
+        try {
+            const res = await client.post('/auth/tenant-login', Object.fromEntries(formData))
+            if (res.data.success) {
+                login(res.data.data)
+                navigate('/tenant')
+                toast.success('欢迎回来')
+            }
+        } catch (err: any) {
+            toast.error(err.response?.data?.error?.message || '登录失败')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="px-8 py-6 bg-primary-600 text-white">
+                    <h1 className="text-2xl font-bold">房屋租赁管理</h1>
+                    <p className="text-primary-100 mt-2">安全、便捷的房屋管理平台</p>
+                </div>
+
+                <div className="p-8">
+                    <Tab.Group>
+                        <Tab.List className="flex space-x-1 rounded-xl bg-gray-100 p-1 mb-6">
+                            {['我是租客', '我是房东'].map((category) => (
+                                <Tab
+                                    key={category}
+                                    className={({ selected }) =>
+                                        clsx(
+                                            'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
+                                            'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                                            selected
+                                                ? 'bg-white shadow text-primary-700'
+                                                : 'text-gray-500 hover:bg-white/[0.12] hover:text-gray-700'
+                                        )
+                                    }
+                                >
+                                    {category}
+                                </Tab>
+                            ))}
+                        </Tab.List>
+                        <Tab.Panels>
+                            <Tab.Panel>
+                                <form onSubmit={handleTenantLogin} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">姓名</label>
+                                        <input name="name" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">房间号</label>
+                                        <input name="roomNumber" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">手机尾号 (6位)</label>
+                                        <input name="phoneLast6" type="text" maxLength={6} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                                    >
+                                        {loading ? '登录中...' : '登录'}
+                                    </button>
+                                </form>
+                            </Tab.Panel>
+                            <Tab.Panel>
+                                <form onSubmit={handleAdminLogin} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">用户名</label>
+                                        <input name="username" type="text" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">密码</label>
+                                        <input name="password" type="password" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500" />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+                                    >
+                                        {loading ? '登录中...' : '管理员登录'}
+                                    </button>
+                                </form>
+                            </Tab.Panel>
+                        </Tab.Panels>
+                    </Tab.Group>
+
+                    <div className="mt-6 text-center">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="text-sm text-gray-500 hover:text-gray-900"
+                        >
+                            我是游客，先看看房源 &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default LoginPage

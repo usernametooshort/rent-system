@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: rent_backend
+    restart: always
+    environment:
+      - PORT=3000
+      - DATABASE_URL=file:/app/data/dev.db
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey12345}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-superrefreshsecretkey12345}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - UPLOAD_DIR=/app/uploads
+      - CORS_ORIGIN=*
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    networks:
+      - rent-network
+
+  frontend:
+    build: ./frontend
+    container_name: rent_frontend
+    restart: always
+    ports:
+      - "8280:80"
+    depends_on:
+      - backend
+    networks:
+      - rent-network
+
+networks:
+  rent-network:
+    driver: bridge
