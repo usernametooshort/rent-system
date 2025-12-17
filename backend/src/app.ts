@@ -21,7 +21,9 @@ const app = fastify({
 })
 
 // 注册插件
-app.register(helmet)
+app.register(helmet, {
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+})
 app.register(cors, {
     origin: config.CORS_ORIGIN.split(','),
     credentials: true
