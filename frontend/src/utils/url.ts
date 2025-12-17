@@ -7,7 +7,7 @@ export const API_BASE_URL = 'https://junited.synology.me:9898';
  */
 export const getImageUrl = (path: string | undefined | null) => {
     if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('blob:')) return path;
+    if (path.startsWith('http') || path.startsWith('blob:') || path.startsWith('data:')) return path;
 
     // 确保 path 以 / 开头
     const CleanPath = path.startsWith('/') ? path : `/${path}`;
