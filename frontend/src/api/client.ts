@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 
 const client = axios.create({
-    baseURL: '/api', // Vite proxy 会处理前缀
+    baseURL: import.meta.env.VITE_API_URL || '/api', // 生产环境使用 VITE_API_URL，开发环境使用 /api (代理)
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
