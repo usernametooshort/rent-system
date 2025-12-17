@@ -105,20 +105,7 @@ const RepairRequestCard = ({ item, onEdit, onDelete }: { item: any, onEdit: (ite
     )
 }
 
-import { Loader2, Wrench, Plus, Clock, Settings, CheckCircle, Camera, X, Image as ImageIcon, Edit2, Trash2 } from 'lucide-react'
-import { Dialog } from '@headlessui/react'
-import { toast } from 'react-hot-toast'
-import { getImageUrl } from '../utils/url'
 
-// ... (AnnouncementCard and MoveOutRequestCard remain unchanged, omitted for brevity if possible basically I am relying on the user context providing only the changed parts but since I am replacing I must be careful.
-// Wait, I cannot easily skip lines in block replacement efficiently without strict line numbers.
-// I will just add the icon imports to the existing line 5 and the new state state line 87.
-// Actually, earlier I replaced RepairRequestCard which used Settings and X. I should make sure I import Edit2 and Trash2 if I use them.
-// In the previous step I reused Settings and X. Let's stick to that to minimize import changes or update imports properly.
-// Let's update imports to include Edit2 and Trash2 for better UI.
-
-// ... code ...
-// I will just perform a specific replacement for the imports and the state.
 
 const TenantServices: React.FC = () => {
     const queryClient = useQueryClient()
@@ -238,11 +225,7 @@ const TenantServices: React.FC = () => {
         })
     }
 
-    // 移除图片
-    const handleRemoveImage = (index: number) => {
-        setRepairImages(prev => prev.filter((_, i) => i !== index))
-        setImagePreviewUrls(prev => prev.filter((_, i) => i !== index))
-    }
+
 
     const handleSubmitRepair = async () => {
         if (!repairTitle.trim()) {
