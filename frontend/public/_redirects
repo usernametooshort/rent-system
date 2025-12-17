@@ -1,8 +1,5 @@
-# Proxy API requests to backend
-/api/*  https://junited.synology.me:8443/api/:splat  200
-
-# Proxy Uploads to backend
-/uploads/*  https://junited.synology.me:8443/uploads/:splat  200
+# Cloudflare Pages Redirect Rules
+# API is connected directly via CORS, no proxy needed here.
 
 # Fallback for SPA routing
 /*  /index.html  200

@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 
 const client = axios.create({
-    baseURL: '/api', // 使用相对路径，通过 Nginx 转发
+    baseURL: 'https://junited.synology.me:9898/api', // 直接连接后端，不经过 Cloudflare Proxy
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',

@@ -16,7 +16,7 @@ const envSchema = z.object({
     HOST: z.string().default('0.0.0.0'),
     UPLOAD_DIR: z.string().default('./uploads'),
     MAX_FILE_SIZE: z.string().transform(Number).default('20971520'),
-    CORS_ORIGIN: z.string().default('http://localhost:5173'),
+    CORS_ORIGIN: z.string().default('https://rent-system.pages.dev,http://localhost:5173,http://localhost:8280'),
     ADMIN_USERNAME: z.string().default('admin'),
     ADMIN_PASSWORD: z.string().default('admin123'),
 })
