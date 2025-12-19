@@ -162,18 +162,45 @@ export class PaymentService {
 
         if (!tenant || tenant.status !== 'active' || !tenant.room) return
 
-        const now = new Date()
-        const currentYear = now.getFullYear()
-        const currentMonth = now.getMonth() + 1
+        // 1. 优先检查并生成押金记录 (只需一条)
+        // 押金记录应该在入驻时就存在，无论租期是否已正式开始
+        const existingDeposit = await prisma.rentRecord.findFirst({
+            where: {
+                tenantId,
+                type: 'DEPOSIT'
+            }
+        })
 
         const leaseStart = new Date(tenant.leaseStartDate)
-        let iterYear = leaseStart.getFullYear()
-        let iterMonth = leaseStart.getMonth() + 1
+        const startYear = leaseStart.getUTCFullYear()
+        const startMonth = leaseStart.getUTCMonth() + 1
+        const startMonthStr = `${startYear}-${String(startMonth).padStart(2, '0')}`
 
+        if (!existingDeposit) {
+            await prisma.rentRecord.create({
+                data: {
+                    tenantId,
+                    month: startMonthStr,
+                    type: 'DEPOSIT',
+                    amount: tenant.room.deposit,
+                    paymentStatus: 'unpaid'
+                }
+            })
+        }
+
+        // 2. 自动生成租金账单 (从起租月到当前月)
+        const now = new Date()
+        // 使用 UTC 获取当前年月，确保与数据库中解析出的 leaseStart 对齐
+        const currentYear = now.getUTCFullYear()
+        const currentMonth = now.getUTCMonth() + 1
+
+        let iterYear = startYear
+        let iterMonth = startMonth
+
+        // 只有当当前日期已经到达或超过租赁起始日期时，才开始生成租金账单
         while (iterYear < currentYear || (iterYear === currentYear && iterMonth <= currentMonth)) {
             const monthStr = `${iterYear}-${String(iterMonth).padStart(2, '0')}`
 
-            // 1. 检查该月 RENT 类型账单是否存在
             const existingRent = await prisma.rentRecord.findUnique({
                 where: {
                     tenantId_month_type: {
@@ -191,28 +218,6 @@ export class PaymentService {
                         month: monthStr,
                         type: 'RENT',
                         amount: tenant.room.rent,
-                        paymentStatus: 'unpaid'
-                    }
-                })
-            }
-
-            // 2. 检查押金记录 (只需一条，通常在起租月)
-            // 这里我们只需要确保该租客至少有一条 DEPOSIT 记录
-            const existingDeposit = await prisma.rentRecord.findFirst({
-                where: {
-                    tenantId,
-                    type: 'DEPOSIT'
-                }
-            })
-
-            if (!existingDeposit) {
-                const startMonthStr = `${leaseStart.getFullYear()}-${String(leaseStart.getMonth() + 1).padStart(2, '0')}`
-                await prisma.rentRecord.create({
-                    data: {
-                        tenantId,
-                        month: startMonthStr,
-                        type: 'DEPOSIT',
-                        amount: tenant.room.deposit,
                         paymentStatus: 'unpaid'
                     }
                 })
