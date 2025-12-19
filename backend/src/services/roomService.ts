@@ -208,6 +208,30 @@ export class RoomService {
         await prisma.appliance.delete({ where: { id: applianceId } })
         return { id: applianceId }
     }
+
+    /**
+     * 获取房间历史记录
+     */
+    async getRoomHistory(roomId: string) {
+        const room = await prisma.room.findUnique({
+            where: { id: roomId }
+        })
+
+        if (!room) throw new NotFoundError('房间不存在')
+
+        // 查询该房间号下的所有退租记录
+        const records = await prisma.checkoutRecord.findMany({
+            where: { roomNumber: room.roomNumber },
+            orderBy: { checkoutDate: 'desc' }
+        })
+
+        // 解析 JSON
+        return records.map(record => ({
+            ...record,
+            deductions: record.deductions ? JSON.parse(record.deductions) : [],
+            applianceCheckResult: record.applianceCheckResult ? JSON.parse(record.applianceCheckResult) : []
+        }))
+    }
 }
 
 export const roomService = new RoomService()

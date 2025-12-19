@@ -74,6 +74,10 @@ export class TenantService {
                 },
                 moveOutRequests: {
                     orderBy: { createdAt: 'desc' }
+                },
+                repairRequests: {
+                    include: { images: true },
+                    orderBy: { createdAt: 'desc' }
                 }
             }
         })

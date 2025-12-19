@@ -84,4 +84,15 @@ export async function roomRoutes(fastify: FastifyInstance) {
         const result = await roomService.deleteAppliance(id, appId)
         reply.send({ success: true, data: result })
     })
+
+    /**
+     * 获取房间历史记录 (管理员)
+     */
+    fastify.get('/:id/history', {
+        preHandler: [authenticate, adminOnly]
+    }, async (request, reply) => {
+        const { id } = request.params as { id: string }
+        const result = await roomService.getRoomHistory(id)
+        reply.send({ success: true, data: result })
+    })
 }

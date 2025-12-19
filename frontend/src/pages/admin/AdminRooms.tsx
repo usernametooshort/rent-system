@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '../../api/client'
-import { Plus, MoreHorizontal, Edit2, Trash2, Key, Settings, Home, Users, LogOut } from 'lucide-react'
+import { Plus, MoreHorizontal, Edit2, Trash2, Key, Settings, Home, Users, LogOut, Clock } from 'lucide-react'
+import TenantHistoryModal from './TenantHistoryModal'
 import RoomFormModal from './RoomFormModal'
 import RentModal from './RentModal'
 import RoomDetailEditModal from './RoomDetailEditModal'
@@ -19,6 +20,8 @@ const AdminRooms: React.FC = () => {
     const [detailRoom, setDetailRoom] = useState<Room | null>(null)
     const [checkoutRoom, setCheckoutRoom] = useState<Room | null>(null)
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+    const [historyRoomId, setHistoryRoomId] = useState<string | null>(null)
     const queryClient = useQueryClient()
 
     // 获取房源列表
@@ -84,6 +87,12 @@ const AdminRooms: React.FC = () => {
         setOpenMenuId(null)
         setCheckoutRoom(room)
         setIsCheckoutModalOpen(true)
+    }
+
+    const handleShowHistory = (room: Room) => {
+        setOpenMenuId(null)
+        setHistoryRoomId(room.id)
+        setIsHistoryModalOpen(true)
     }
 
     const handleDelete = (room: Room) => {
@@ -254,6 +263,14 @@ const AdminRooms: React.FC = () => {
                                                 <Edit2 size={16} />
                                                 编辑信息
                                             </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleShowHistory(room)}
+                                                className="flex items-center gap-3 w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                            >
+                                                <Clock size={16} />
+                                                历史归档
+                                            </button>
                                             <div className="border-t border-gray-100 my-1" />
                                             <button
                                                 type="button"
@@ -310,6 +327,15 @@ const AdminRooms: React.FC = () => {
                 onSuccess={() => {
                     queryClient.invalidateQueries({ queryKey: ['admin-rooms'] })
                 }}
+            />
+
+            <TenantHistoryModal
+                isOpen={isHistoryModalOpen}
+                onClose={() => {
+                    setIsHistoryModalOpen(false)
+                    setHistoryRoomId(null)
+                }}
+                roomId={historyRoomId || undefined}
             />
         </div>
     )

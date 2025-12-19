@@ -3,10 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '../../api/client'
 import { Loader2, Phone } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import TenantHistoryModal from './TenantHistoryModal'
 
 const AdminTenants: React.FC = () => {
     const queryClient = useQueryClient()
     const [statusFilter, setStatusFilter] = React.useState<'active' | 'history'>('active')
+    const [selectedTenantId, setSelectedTenantId] = React.useState<string | undefined>(undefined)
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = React.useState(false)
 
     const { data, isLoading } = useQuery({
         queryKey: ['admin-tenants', statusFilter],
@@ -99,11 +102,20 @@ const AdminTenants: React.FC = () => {
                                                             .catch((err) => toast.error(err.response?.data?.message || '重置失败'))
                                                     }
                                                 }}
-                                                className="text-primary-600 hover:text-primary-900 text-sm"
+                                                className="text-primary-600 hover:text-primary-900 text-sm font-medium"
                                             >
                                                 重置密码
                                             </button>
                                         )}
+                                        <button
+                                            onClick={() => {
+                                                setSelectedTenantId(tenant.id)
+                                                setIsHistoryModalOpen(true)
+                                            }}
+                                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                                        >
+                                            租赁详情
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 if (confirm('确定要删除该租客吗？由于租客关联数据较多，建议先操作退租流程。')) {
@@ -124,6 +136,15 @@ const AdminTenants: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <TenantHistoryModal
+                isOpen={isHistoryModalOpen}
+                onClose={() => {
+                    setIsHistoryModalOpen(false)
+                    setSelectedTenantId(undefined)
+                }}
+                tenantId={selectedTenantId}
+            />
         </div>
     )
 }
