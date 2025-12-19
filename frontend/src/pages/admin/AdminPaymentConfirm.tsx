@@ -12,6 +12,7 @@ interface PendingPayment {
     id: string
     month: string
     amount: number
+    type: 'RENT' | 'DEPOSIT'
     paymentProofUrl: string
     paymentStatus: string
     submittedAt: string
@@ -165,6 +166,10 @@ const AdminPaymentConfirm: React.FC = () => {
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded leading-none ${payment.type === 'DEPOSIT' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
+                                            }`}>
+                                            {payment.type === 'DEPOSIT' ? '押金' : '房租'}
+                                        </span>
                                         <span className="font-bold text-lg">{payment.tenant.room?.roomNumber || '未知'}室</span>
                                         <span className="text-gray-500">- {payment.tenant.name}</span>
                                     </div>

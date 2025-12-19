@@ -143,6 +143,17 @@ export class TenantService {
                 data: roomUpdateData
             })
 
+            // 4. 自动生成押金记录
+            await tx.rentRecord.create({
+                data: {
+                    tenantId: tenant.id,
+                    month: new Date().toISOString().slice(0, 7), // 当前月份
+                    type: 'DEPOSIT',
+                    amount: updatedRoom.deposit,
+                    paymentStatus: 'unpaid'
+                }
+            })
+
             return { tenant, room: updatedRoom }
         })
 
@@ -205,11 +216,12 @@ export class TenantService {
         const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
         if (!tenant) throw new NotFoundError('租客不存在')
 
-        // 检查当月记录是否已存在
+        // 检查当月同类型记录是否已存在
         const existing = await prisma.rentRecord.findFirst({
             where: {
                 tenantId,
-                month: data.month
+                month: data.month,
+                type: (data as any).type || 'RENT'
             }
         })
 

@@ -8,6 +8,7 @@ interface RentRecord {
     id: string
     month: string
     amount: number
+    type: 'RENT' | 'DEPOSIT'
     paid: boolean
     paidAt?: string
 }
@@ -117,17 +118,21 @@ const AdminRentPayments: React.FC = () => {
                                     <div className="text-sm text-gray-400 text-center py-2">暂无租金记录</div>
                                 ) : (
                                     tenant.rentRecords.slice(0, 6).map((record) => (
-                                        <div key={record.id} className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2">
+                                        <div key={record.id} className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
                                             <div className="flex items-center gap-3">
+                                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded leading-none ${record.type === 'DEPOSIT' ? 'bg-purple-500 text-white' : 'bg-gray-400 text-white'
+                                                    }`}>
+                                                    {record.type === 'DEPOSIT' ? '押金' : '房租'}
+                                                </span>
                                                 <span className="font-medium">{record.month}</span>
-                                                <span className="text-gray-600">¥{record.amount}</span>
+                                                <span className="text-gray-600 font-bold">¥{record.amount}</span>
                                                 {record.paid ? (
-                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                        <Check size={12} /> 已缴
+                                                    <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                                        <Check size={10} /> 已缴
                                                     </span>
                                                 ) : (
-                                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                                        <X size={12} /> 未缴
+                                                    <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                                                        <X size={10} /> 未缴
                                                     </span>
                                                 )}
                                             </div>

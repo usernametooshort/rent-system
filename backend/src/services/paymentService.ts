@@ -72,11 +72,12 @@ export class PaymentService {
     }
 
     /**
-     * 管理员确认/拒绝付款
+     * 确认/拒绝付款
      */
     async confirmPayment(recordId: string, data: ConfirmPaymentInput) {
         const record = await prisma.rentRecord.findUnique({
-            where: { id: recordId }
+            where: { id: recordId },
+            include: { tenant: true }
         })
 
         if (!record) {
@@ -89,7 +90,7 @@ export class PaymentService {
 
         if (data.confirmed) {
             // 确认付款
-            return prisma.rentRecord.update({
+            const updatedRecord = await prisma.rentRecord.update({
                 where: { id: recordId },
                 data: {
                     paid: true,
@@ -98,6 +99,16 @@ export class PaymentService {
                     paymentNote: data.paymentNote
                 }
             })
+
+            // 如果确认的是押金，同步更新租客状态
+            if (record.type === 'DEPOSIT') {
+                await prisma.tenant.update({
+                    where: { id: record.tenantId },
+                    data: { depositPaid: true }
+                })
+            }
+
+            return updatedRecord
         } else {
             // 拒绝付款
             return prisma.rentRecord.update({
@@ -141,13 +152,71 @@ export class PaymentService {
     }
 
     /**
+     * 自动生成缺失的租金账单（从起租月到当前月）
+     */
+    private async autoGenerateRentRecords(tenantId: string) {
+        const tenant = await prisma.tenant.findUnique({
+            where: { id: tenantId },
+            include: { room: true }
+        })
+
+        if (!tenant || tenant.status !== 'active' || !tenant.room) return
+
+        const now = new Date()
+        const currentYear = now.getFullYear()
+        const currentMonth = now.getMonth() + 1
+
+        const leaseStart = new Date(tenant.leaseStartDate)
+        let iterYear = leaseStart.getFullYear()
+        let iterMonth = leaseStart.getMonth() + 1
+
+        while (iterYear < currentYear || (iterYear === currentYear && iterMonth <= currentMonth)) {
+            const monthStr = `${iterYear}-${String(iterMonth).padStart(2, '0')}`
+
+            // 检查该月 RENT 类型账单是否存在
+            const existing = await prisma.rentRecord.findUnique({
+                where: {
+                    tenantId_month_type: {
+                        tenantId,
+                        month: monthStr,
+                        type: 'RENT'
+                    }
+                }
+            })
+
+            if (!existing) {
+                await prisma.rentRecord.create({
+                    data: {
+                        tenantId,
+                        month: monthStr,
+                        type: 'RENT',
+                        amount: tenant.room.rent,
+                        paymentStatus: 'unpaid'
+                    }
+                })
+            }
+
+            // 月份递增
+            iterMonth++
+            if (iterMonth > 12) {
+                iterMonth = 1
+                iterYear++
+            }
+        }
+    }
+
+    /**
      * 获取租客的付款记录详情（包含凭证状态）
+     * 访问时会自动触发补全缺失账单
      */
     async getTenantPaymentRecords(tenantId: string) {
+        // 先检查并自动生成缺失账单
+        await this.autoGenerateRentRecords(tenantId)
+
         return prisma.rentRecord.findMany({
             where: { tenantId },
             orderBy: { month: 'desc' },
-            take: 12
+            take: 24 // 增加展示条数
         })
     }
 }
