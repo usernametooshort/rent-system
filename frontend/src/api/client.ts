@@ -3,9 +3,6 @@ import axios, { AxiosError } from 'axios'
 const client = axios.create({
     baseURL: 'https://junited.synology.me:9898/api', // 直接连接后端，不经过 Cloudflare Proxy
     timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 })
 
 // 请求拦截器：自动附加 token
