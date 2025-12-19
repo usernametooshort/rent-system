@@ -8,8 +8,8 @@ import { z } from 'zod'
  * 更新付款设置（管理员）
  */
 export const updatePaymentSettingsSchema = z.object({
-    wechatQrCodeUrl: z.string().optional(),
-    paymentNote: z.string().optional(),
+    wechatQrCodeUrl: z.string().nullable().optional(),
+    paymentNote: z.string().nullable().optional(),
 })
 
 export type UpdatePaymentSettingsInput = z.infer<typeof updatePaymentSettingsSchema>

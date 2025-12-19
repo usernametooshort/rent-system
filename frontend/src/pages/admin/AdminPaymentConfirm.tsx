@@ -113,9 +113,7 @@ const AdminPaymentConfirm: React.FC = () => {
 
             const formData = new FormData()
             formData.append('file', compressedFile)
-            const res = await client.post('/upload/image', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            const res = await client.post('/upload/image', formData)
             setQrUrl(res.data.data.url)
         } catch (err) {
             toast.error('上传失败')
@@ -126,8 +124,8 @@ const AdminPaymentConfirm: React.FC = () => {
 
     const handleSaveSettings = () => {
         updateSettingsMutation.mutate({
-            wechatQrCodeUrl: qrUrl || settings?.wechatQrCodeUrl,
-            paymentNote: paymentNote || settings?.paymentNote
+            wechatQrCodeUrl: qrUrl ?? settings?.wechatQrCodeUrl ?? undefined,
+            paymentNote: paymentNote || (settings?.paymentNote ?? undefined)
         })
     }
 

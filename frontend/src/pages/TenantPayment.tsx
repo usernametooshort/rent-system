@@ -112,9 +112,7 @@ const TenantPayment: React.FC = () => {
             // 上传
             const formData = new FormData()
             formData.append('file', compressedFile)
-            const res = await client.post('/upload/image', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            const res = await client.post('/upload/image', formData)
             setUploadedUrl(res.data.data.url)
             toast.success('图片上传成功')
         } catch (err: any) {
