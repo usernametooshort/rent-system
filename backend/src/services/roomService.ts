@@ -10,6 +10,7 @@ import {
     AddApplianceInput,
     RoomQueryInput
 } from '../schemas/room.js'
+import { paymentService } from './paymentService.js'
 
 export class RoomService {
     /**
@@ -63,19 +64,14 @@ export class RoomService {
      * 获取房间详情
      */
     async getRoomById(id: string) {
-        const room = await prisma.room.findUnique({
+        let room = await prisma.room.findUnique({
             where: { id },
             include: {
                 appliances: true,
-                images: {
-                    orderBy: { order: 'asc' }
-                },
+                images: { orderBy: { order: 'asc' } },
                 tenant: {
                     include: {
-                        rentRecords: {
-                            orderBy: { month: 'desc' },
-                            take: 12
-                        }
+                        rentRecords: { orderBy: { month: 'desc' }, take: 12 }
                     }
                 }
             }
@@ -85,7 +81,25 @@ export class RoomService {
             throw new NotFoundError('房间不存在')
         }
 
-        return room
+        // 如果该房间有活跃租客，触发补齐账单逻辑
+        if (room.tenant && room.status === 'rented') {
+            await paymentService.autoGenerateRentRecords(room.tenant.id)
+            // 重新查询以获取最新生成的账单
+            room = await prisma.room.findUnique({
+                where: { id },
+                include: {
+                    appliances: true,
+                    images: { orderBy: { order: 'asc' } },
+                    tenant: {
+                        include: {
+                            rentRecords: { orderBy: { month: 'desc' }, take: 12 }
+                        }
+                    }
+                }
+            })
+        }
+
+        return room!
     }
 
     /**

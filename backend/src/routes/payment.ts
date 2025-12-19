@@ -82,6 +82,16 @@ export async function paymentRoutes(fastify: FastifyInstance) {
     })
 
     /**
+     * 获取付款历史记录
+     */
+    fastify.get('/history', {
+        preHandler: [authenticate, adminOnly]
+    }, async (request, reply) => {
+        const history = await paymentService.getPaymentHistory()
+        reply.send({ success: true, data: history })
+    })
+
+    /**
      * 确认/拒绝付款
      */
     fastify.put('/confirm/:recordId', {

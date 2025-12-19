@@ -15,6 +15,7 @@ interface PendingPayment {
     type: 'RENT' | 'DEPOSIT'
     paymentProofUrl: string
     paymentStatus: string
+    paymentNote?: string
     submittedAt: string
     tenant: {
         id: string
@@ -42,6 +43,7 @@ const AdminPaymentConfirm: React.FC = () => {
     const [qrUrl, setQrUrl] = useState<string | null>(null)
     const [paymentNote, setPaymentNote] = useState('')
     const [rejectNote, setRejectNote] = useState('')
+    const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending')
 
     // 获取待确认付款列表
     const { data: pendingPayments, isLoading: loadingPending } = useQuery<PendingPayment[]>({
@@ -51,6 +53,15 @@ const AdminPaymentConfirm: React.FC = () => {
             return res.data.data
         },
         refetchInterval: 30000 // 每30秒刷新
+    })
+
+    // 获取付款历史
+    const { data: paymentHistory, isLoading: loadingHistory } = useQuery<PendingPayment[]>({
+        queryKey: ['payment-history'],
+        queryFn: async () => {
+            const res = await client.get('/payment/history')
+            return res.data.data
+        }
     })
 
     // 获取当前设置
@@ -70,6 +81,7 @@ const AdminPaymentConfirm: React.FC = () => {
         onSuccess: (_, variables) => {
             toast.success(variables.confirmed ? '付款已确认' : '付款已拒绝')
             queryClient.invalidateQueries({ queryKey: ['pending-payments'] })
+            queryClient.invalidateQueries({ queryKey: ['payment-history'] })
             queryClient.invalidateQueries({ queryKey: ['admin-tenants-with-rent'] })
             setSelectedPayment(null)
             setIsPreviewOpen(false)
@@ -137,12 +149,18 @@ const AdminPaymentConfirm: React.FC = () => {
         setIsSettingsOpen(true)
     }
 
-    if (loadingPending || loadingSettings) {
+    if (loadingPending || loadingSettings || loadingHistory) {
         return (
             <div className="flex justify-center pt-20">
                 <Loader2 className="animate-spin text-primary-500" />
             </div>
         )
+    }
+
+    const statusMap: Record<string, { text: string, color: string }> = {
+        confirmed: { text: '已确认', color: 'bg-green-100 text-green-700' },
+        rejected: { text: '已拒绝', color: 'bg-red-100 text-red-700' },
+        pending: { text: '待确认', color: 'bg-orange-100 text-orange-700' }
     }
 
     return (
@@ -158,77 +176,145 @@ const AdminPaymentConfirm: React.FC = () => {
                 </button>
             </div>
 
-            {/* 待确认列表 */}
-            {pendingPayments && pendingPayments.length > 0 ? (
-                <div className="space-y-3">
-                    {pendingPayments.map(payment => (
-                        <div key={payment.id} className="bg-white rounded-xl shadow-sm p-4">
-                            <div className="flex justify-between items-start mb-3">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded leading-none ${payment.type === 'DEPOSIT' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
-                                            }`}>
-                                            {payment.type === 'DEPOSIT' ? '押金' : '房租'}
-                                        </span>
-                                        <span className="font-bold text-lg">{payment.tenant.room?.roomNumber || '未知'}室</span>
-                                        <span className="text-gray-500">- {payment.tenant.name}</span>
+            {/* 选项卡切换 */}
+            <div className="flex border-b border-gray-200 mb-6">
+                <button
+                    onClick={() => setActiveTab('pending')}
+                    className={`px-6 py-2 pb-3 font-bold text-sm transition-colors relative ${activeTab === 'pending' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                >
+                    待确认
+                    {pendingPayments && pendingPayments.length > 0 && (
+                        <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                            {pendingPayments.length}
+                        </span>
+                    )}
+                    {activeTab === 'pending' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>}
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    className={`px-6 py-2 pb-3 font-bold text-sm transition-colors relative ${activeTab === 'history' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                >
+                    已处理
+                    {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full"></div>}
+                </button>
+            </div>
+
+            {activeTab === 'pending' ? (
+                /* 待确认列表 */
+                pendingPayments && pendingPayments.length > 0 ? (
+                    <div className="space-y-3">
+                        {pendingPayments.map(payment => (
+                            <div key={payment.id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-50">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded leading-none ${payment.type === 'DEPOSIT' ? 'bg-purple-500 text-white' : 'bg-blue-500 text-white'
+                                                }`}>
+                                                {payment.type === 'DEPOSIT' ? '押金' : '房租'}
+                                            </span>
+                                            <span className="font-bold text-lg">{payment.tenant.room?.roomNumber || '未知'}室</span>
+                                            <span className="text-gray-500">- {payment.tenant.name}</span>
+                                        </div>
+                                        <div className="text-sm text-gray-500">{payment.tenant.phone}</div>
                                     </div>
-                                    <div className="text-sm text-gray-500">{payment.tenant.phone}</div>
+                                    <div className="text-right">
+                                        <div className="font-bold text-lg text-primary-600">¥{payment.amount}</div>
+                                        <div className="text-sm text-gray-500">{payment.month}</div>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="font-bold text-lg text-primary-600">¥{payment.amount}</div>
-                                    <div className="text-sm text-gray-500">{payment.month}</div>
-                                </div>
-                            </div>
 
-                            <div className="flex items-center justify-between bg-orange-50 rounded-lg p-3 mb-3">
-                                <div className="flex items-center gap-2 text-orange-600">
-                                    <Clock size={16} />
-                                    <span className="text-sm">
-                                        提交于 {format(new Date(payment.submittedAt), 'MM-dd HH:mm')}
-                                    </span>
+                                <div className="flex items-center justify-between bg-orange-50 rounded-lg p-3 mb-3">
+                                    <div className="flex items-center gap-2 text-orange-600">
+                                        <Clock size={16} />
+                                        <span className="text-sm">
+                                            提交于 {format(new Date(payment.submittedAt), 'MM-dd HH:mm')}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedPayment(payment)
+                                            setIsPreviewOpen(true)
+                                        }}
+                                        className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-bold"
+                                    >
+                                        <Eye size={16} />
+                                        查看凭证
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setSelectedPayment(payment)
-                                        setIsPreviewOpen(true)
-                                    }}
-                                    className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
-                                >
-                                    <Eye size={16} />
-                                    查看凭证
-                                </button>
-                            </div>
 
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => confirmMutation.mutate({ recordId: payment.id, confirmed: true })}
-                                    disabled={confirmMutation.isPending}
-                                    className="flex-1 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-1"
-                                >
-                                    <Check size={16} />
-                                    确认付款
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setSelectedPayment(payment)
-                                        setIsPreviewOpen(true)
-                                    }}
-                                    disabled={confirmMutation.isPending}
-                                    className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 flex items-center justify-center gap-1"
-                                >
-                                    <X size={16} />
-                                    拒绝
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => confirmMutation.mutate({ recordId: payment.id, confirmed: true })}
+                                        disabled={confirmMutation.isPending}
+                                        className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm shadow-green-100"
+                                    >
+                                        <Check size={16} />
+                                        确认付款
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedPayment(payment)
+                                            setIsPreviewOpen(true)
+                                        }}
+                                        disabled={confirmMutation.isPending}
+                                        className="flex-[0.4] bg-gray-100 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-200 disabled:opacity-50 flex items-center justify-center gap-1"
+                                    >
+                                        <X size={16} />
+                                        拒绝
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm p-12 text-center border-2 border-dashed border-gray-100">
+                        <Check size={48} className="text-green-500 mx-auto mb-3" />
+                        <p className="text-gray-500 font-medium">暂无待确认的任务，去喝杯咖啡吧！</p>
+                    </div>
+                )
             ) : (
-                <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                    <Check size={48} className="text-green-500 mx-auto mb-3" />
-                    <p className="text-gray-500">暂无待确认的付款</p>
-                </div>
+                /* 历史记录列表 */
+                paymentHistory && paymentHistory.length > 0 ? (
+                    <div className="space-y-3">
+                        {paymentHistory.map(payment => (
+                            <div key={payment.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between border border-gray-50">
+                                <div className="flex items-center gap-4">
+                                    <div className={`p-3 rounded-xl ${payment.paymentStatus === 'confirmed' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                        <CreditCard size={20} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-gray-900">{payment.tenant.room?.roomNumber}室</span>
+                                            <span className="text-sm text-gray-500">{payment.tenant.name}</span>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none ${statusMap[payment.paymentStatus].color}`}>
+                                                {statusMap[payment.paymentStatus].text}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-gray-400 mt-1">
+                                            {payment.month} · ¥{payment.amount} · {payment.type === 'DEPOSIT' ? '押金' : '房租'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setSelectedPayment(payment)
+                                        setIsPreviewOpen(true)
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                                >
+                                    <Eye size={20} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                        <Clock size={48} className="text-gray-200 mx-auto mb-3" />
+                        <p className="text-gray-400">暂无历史记录</p>
+                    </div>
+                )
             )}
 
             {/* 凭证预览弹窗 */}
@@ -257,56 +343,70 @@ const AdminPaymentConfirm: React.FC = () => {
                                 <span className="text-gray-600">应付金额</span>
                                 <span className="font-bold text-primary-600">¥{selectedPayment?.amount}</span>
                             </div>
+                            {selectedPayment?.paymentNote && (
+                                <div className="flex justify-between mt-1 pt-1 border-t border-gray-100">
+                                    <span className="text-gray-600">系统备注</span>
+                                    <span className="text-sm text-red-500 font-medium">{selectedPayment.paymentNote}</span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* 拒绝原因输入 */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                拒绝原因（可选）
-                            </label>
-                            <input
-                                type="text"
-                                value={rejectNote}
-                                onChange={e => setRejectNote(e.target.value)}
-                                placeholder="如：截图模糊、金额不符等"
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                            />
-                        </div>
+                        {/* 只有待确认状态才显示操作按钮 */}
+                        {selectedPayment?.paymentStatus === 'pending' ? (
+                            <>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        拒绝原因（可选）
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={rejectNote}
+                                        onChange={e => setRejectNote(e.target.value)}
+                                        placeholder="如：截图模糊、金额不符等"
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                                    />
+                                </div>
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => {
-                                    if (selectedPayment) {
-                                        confirmMutation.mutate({ recordId: selectedPayment.id, confirmed: true })
-                                    }
-                                }}
-                                disabled={confirmMutation.isPending}
-                                className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
-                            >
-                                确认付款
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (selectedPayment) {
-                                        confirmMutation.mutate({
-                                            recordId: selectedPayment.id,
-                                            confirmed: false,
-                                            note: rejectNote
-                                        })
-                                    }
-                                }}
-                                disabled={confirmMutation.isPending}
-                                className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
-                            >
-                                拒绝
-                            </button>
-                        </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            if (selectedPayment) {
+                                                confirmMutation.mutate({ recordId: selectedPayment.id, confirmed: true })
+                                            }
+                                        }}
+                                        disabled={confirmMutation.isPending}
+                                        className="flex-1 bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 shadow-sm shadow-green-100 transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        确认付款
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (selectedPayment) {
+                                                confirmMutation.mutate({
+                                                    recordId: selectedPayment.id,
+                                                    confirmed: false,
+                                                    note: rejectNote
+                                                })
+                                            }
+                                        }}
+                                        disabled={confirmMutation.isPending}
+                                        className="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50"
+                                    >
+                                        拒绝
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <div className={`text-center py-3 rounded-xl font-bold ${statusMap[selectedPayment?.paymentStatus || 'pending'].color}`}>
+                                该记录已处理：{statusMap[selectedPayment?.paymentStatus || 'pending'].text}
+                            </div>
+                        )}
 
                         <button
                             onClick={() => setIsPreviewOpen(false)}
-                            className="w-full text-gray-500 text-sm py-2 mt-2"
+                            className="w-full text-gray-400 text-xs font-bold py-2 mt-4 hover:text-gray-600"
                         >
-                            取消
+                            关闭预览
                         </button>
                     </Dialog.Panel>
                 </div>

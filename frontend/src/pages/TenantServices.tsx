@@ -27,21 +27,46 @@ const MoveOutRequestCard = ({ item }: { item: any }) => {
         rejected: { text: '已驳回', color: 'text-red-500 bg-red-50' }
     }
     const status = statusMap[item.status]
+    const refundPlan = item.refundPlan ? JSON.parse(item.refundPlan) : []
 
     return (
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
-            <div className="flex justify-between items-start mb-2">
-                <span className="font-medium text-gray-900">退租申请</span>
-                <span className={`text-xs px-2 py-1 rounded-full ${status.color}`}>
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-3 border border-gray-100">
+            <div className="flex justify-between items-start mb-3">
+                <span className="font-bold text-gray-900">退租申请详情</span>
+                <span className={`text-xs px-2 py-1 rounded-full font-bold ${status.color}`}>
                     {status.text}
                 </span>
             </div>
-            <div className="text-sm text-gray-500">
-                期望验房: {format(new Date(item.preferredInspectionDate), 'yyyy-MM-dd')}
+            <div className="text-sm text-gray-600 mb-3 space-y-1">
+                <div className="flex justify-between">
+                    <span className="text-gray-400">期望验房时间</span>
+                    <span className="font-medium text-gray-900">{format(new Date(item.preferredInspectionDate), 'yyyy-MM-dd')}</span>
+                </div>
             </div>
+
+            {/* 退款方案 */}
+            {item.status === 'approved' && (item.refundAmount !== null || refundPlan.length > 0) && (
+                <div className="mt-3 pt-3 border-t border-dashed border-gray-100">
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">押金结算方案</div>
+                    <div className="space-y-2 mb-3">
+                        {refundPlan.map((d: any, i: number) => (
+                            <div key={i} className="flex justify-between text-sm">
+                                <span className="text-gray-500">{d.name}</span>
+                                <span className="text-red-500 font-medium">-¥{d.amount}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-3 flex justify-between items-center">
+                        <span className="text-sm font-bold text-green-700">预计退还总额</span>
+                        <span className="text-lg font-black text-green-700 tracking-tighter">¥{item.refundAmount}</span>
+                    </div>
+                </div>
+            )}
+
             {item.note && (
-                <div className="mt-2 text-sm bg-gray-50 p-2 rounded text-gray-600">
-                    管理员回复: {item.note}
+                <div className="mt-3 text-sm bg-gray-50 p-3 rounded-lg text-gray-600 border border-gray-100">
+                    <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">管理员备注</div>
+                    {item.note}
                 </div>
             )}
         </div>

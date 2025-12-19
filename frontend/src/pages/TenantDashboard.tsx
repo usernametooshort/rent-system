@@ -19,10 +19,19 @@ const RentHistoryCard = ({ records }: { records: any[] }) => (
         <div className="space-y-3">
             {records?.map((record) => (
                 <div key={record.id} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                    <div>
-                        <div className="font-medium text-gray-900">{record.month} 账单</div>
-                        <div className="text-xs text-gray-500">
-                            {record.paid ? `支付于 ${format(new Date(record.paidAt), 'yyyy-MM-dd')}` : '未支付'}
+                    <div className="flex items-center gap-3">
+                        <div className={`w-1 h-8 rounded-full ${record.type === 'DEPOSIT' ? 'bg-purple-400' : 'bg-primary-400'}`}></div>
+                        <div>
+                            <div className="font-medium text-gray-900 flex items-center gap-2">
+                                {record.type === 'DEPOSIT' ? '租房押金' : `${record.month} 账单`}
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${record.type === 'DEPOSIT' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'
+                                    }`}>
+                                    {record.type === 'DEPOSIT' ? '押金' : '房租'}
+                                </span>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                {record.paid ? `支付于 ${format(new Date(record.paidAt), 'yyyy-MM-dd')}` : '未支付'}
+                            </div>
                         </div>
                     </div>
                     <div className={`font-bold ${record.paid ? 'text-green-600' : 'text-red-500'}`}>
@@ -108,6 +117,9 @@ const TenantDashboard: React.FC = () => {
     // 提取租客信息（实际上 API 返回的 room.tenant 就是自己）
     const tenantInfo = room.tenant as any
 
+    // 检查是否有待缴纳的押金
+    const pendingDeposit = tenantInfo.rentRecords?.find((r: any) => r.type === 'DEPOSIT' && !r.paid)
+
     return (
         <div>
             {/* 头部概览 */}
@@ -124,10 +136,30 @@ const TenantDashboard: React.FC = () => {
                     </div>
                     <div className="text-right">
                         <div className="text-primary-100 text-sm">押金</div>
-                        <div className="font-semibold">¥{room.deposit}</div>
+                        <div className="font-semibold flex items-center justify-end gap-1">
+                            ¥{room.deposit}
+                            {pendingDeposit ? (
+                                <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full">未缴纳</span>
+                            ) : (
+                                <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full">已缴纳</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* 紧急提醒：待缴押金 */}
+            {pendingDeposit && (
+                <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
+                        <AlertCircle size={20} />
+                    </div>
+                    <div className="flex-1">
+                        <div className="text-sm font-bold text-red-900">请尽快缴纳租房押金</div>
+                        <div className="text-xs text-red-700">您有一笔 ¥{pendingDeposit.amount} 的押金尚未缴纳，请点击下方按钮前往支付。</div>
+                    </div>
+                </div>
+            )}
 
             {/* 快捷操作 */}
             <div className="flex gap-3 mb-6">
@@ -138,7 +170,7 @@ const TenantDashboard: React.FC = () => {
                     <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
                         <CreditCard size={16} />
                     </div>
-                    <span className="text-sm font-medium text-gray-700">缴纳房租</span>
+                    <span className="text-sm font-medium text-gray-700">{pendingDeposit ? '缴纳押金/房租' : '缴纳房租'}</span>
                 </button>
                 <button
                     onClick={() => setIsMoveOutModalOpen(true)}

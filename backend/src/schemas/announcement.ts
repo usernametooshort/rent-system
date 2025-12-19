@@ -49,6 +49,11 @@ export const updateMoveOutRequestSchema = z.object({
         errorMap: () => ({ message: '状态只能是 approved 或 rejected' })
     }),
     note: z.string().max(500, '备注最长500字').optional(),
+    refundAmount: z.number().min(0).optional(),
+    refundPlan: z.array(z.object({
+        name: z.string(),
+        amount: z.number()
+    })).optional(),
 })
 
 export type UpdateMoveOutRequestInput = z.infer<typeof updateMoveOutRequestSchema>

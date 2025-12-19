@@ -2,7 +2,7 @@ import React from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import client from '../../api/client'
 import { toast } from 'react-hot-toast'
-import { Check, X, DollarSign } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 
 interface RentRecord {
     id: string
@@ -51,39 +51,6 @@ const AdminRentPayments: React.FC = () => {
         }
     })
 
-    // 添加租金记录
-    const addRentMutation = useMutation({
-        mutationFn: async ({ tenantId, month, amount }: { tenantId: string; month: string; amount: number }) => {
-            await client.post(`/tenants/${tenantId}/rent-records`, { month, amount, paid: false })
-        },
-        onSuccess: () => {
-            toast.success('记录已添加')
-            queryClient.invalidateQueries({ queryKey: ['admin-tenants-with-rent'] })
-        },
-        onError: (err: any) => {
-            toast.error(err.response?.data?.error?.message || '添加失败')
-        }
-    })
-
-    const getCurrentMonth = () => {
-        const now = new Date()
-        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    }
-
-    const handleAddCurrentMonth = (tenant: Tenant) => {
-        const month = getCurrentMonth()
-        // 检查是否已有这个月的记录
-        const exists = tenant.rentRecords?.some(r => r.month === month)
-        if (exists) {
-            toast.error('本月租金记录已存在')
-            return
-        }
-        addRentMutation.mutate({
-            tenantId: tenant.id,
-            month,
-            amount: tenant.room.rent
-        })
-    }
 
     return (
         <div>
@@ -103,13 +70,6 @@ const AdminRentPayments: React.FC = () => {
                                     <span className="text-gray-500 ml-2">- {tenant.name}</span>
                                     <span className="text-sm text-gray-400 ml-2">{tenant.phone}</span>
                                 </div>
-                                <button
-                                    onClick={() => handleAddCurrentMonth(tenant)}
-                                    disabled={addRentMutation.isPending}
-                                    className="text-sm bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 disabled:opacity-50 flex items-center gap-1"
-                                >
-                                    <DollarSign size={14} /> 添加本月
-                                </button>
                             </div>
 
                             {/* 租金记录 */}

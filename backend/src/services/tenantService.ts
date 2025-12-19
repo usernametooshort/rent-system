@@ -11,6 +11,7 @@ import {
     RentRecordInput,
     UpdateRentRecordInput
 } from '../schemas/tenant.js'
+import { paymentService } from './paymentService.js'
 
 export class TenantService {
     /**
@@ -43,6 +44,13 @@ export class TenantService {
             }),
             prisma.tenant.count({ where })
         ])
+
+        // 并发触发自动生成账单
+        await Promise.all(
+            tenants
+                .filter(t => t.status === 'active')
+                .map(t => paymentService.autoGenerateRentRecords(t.id))
+        )
 
         return {
             items: tenants,

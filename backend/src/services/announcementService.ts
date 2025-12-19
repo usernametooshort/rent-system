@@ -159,7 +159,9 @@ export class MoveOutService {
             where: { id },
             data: {
                 status: data.status,
-                note: data.note
+                note: data.note,
+                refundAmount: data.refundAmount,
+                refundPlan: data.refundPlan ? JSON.stringify(data.refundPlan) : undefined
             }
         })
     }

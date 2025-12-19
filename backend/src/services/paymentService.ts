@@ -154,7 +154,7 @@ export class PaymentService {
     /**
      * 自动生成缺失的租金账单（从起租月到当前月）
      */
-    private async autoGenerateRentRecords(tenantId: string) {
+    public async autoGenerateRentRecords(tenantId: string) {
         const tenant = await prisma.tenant.findUnique({
             where: { id: tenantId },
             include: { room: true }
@@ -173,8 +173,8 @@ export class PaymentService {
         while (iterYear < currentYear || (iterYear === currentYear && iterMonth <= currentMonth)) {
             const monthStr = `${iterYear}-${String(iterMonth).padStart(2, '0')}`
 
-            // 检查该月 RENT 类型账单是否存在
-            const existing = await prisma.rentRecord.findUnique({
+            // 1. 检查该月 RENT 类型账单是否存在
+            const existingRent = await prisma.rentRecord.findUnique({
                 where: {
                     tenantId_month_type: {
                         tenantId,
@@ -184,13 +184,35 @@ export class PaymentService {
                 }
             })
 
-            if (!existing) {
+            if (!existingRent) {
                 await prisma.rentRecord.create({
                     data: {
                         tenantId,
                         month: monthStr,
                         type: 'RENT',
                         amount: tenant.room.rent,
+                        paymentStatus: 'unpaid'
+                    }
+                })
+            }
+
+            // 2. 检查押金记录 (只需一条，通常在起租月)
+            // 这里我们只需要确保该租客至少有一条 DEPOSIT 记录
+            const existingDeposit = await prisma.rentRecord.findFirst({
+                where: {
+                    tenantId,
+                    type: 'DEPOSIT'
+                }
+            })
+
+            if (!existingDeposit) {
+                const startMonthStr = `${leaseStart.getFullYear()}-${String(leaseStart.getMonth() + 1).padStart(2, '0')}`
+                await prisma.rentRecord.create({
+                    data: {
+                        tenantId,
+                        month: startMonthStr,
+                        type: 'DEPOSIT',
+                        amount: tenant.room.deposit,
                         paymentStatus: 'unpaid'
                     }
                 })
@@ -217,6 +239,26 @@ export class PaymentService {
             where: { tenantId },
             orderBy: { month: 'desc' },
             take: 24 // 增加展示条数
+        })
+    }
+
+    /**
+     * 获取付款历史记录（管理员）
+     */
+    async getPaymentHistory() {
+        return prisma.rentRecord.findMany({
+            where: {
+                paymentStatus: { in: ['confirmed', 'rejected'] }
+            },
+            include: {
+                tenant: {
+                    include: {
+                        room: true
+                    }
+                }
+            },
+            orderBy: { submittedAt: 'desc' },
+            take: 100
         })
     }
 }
