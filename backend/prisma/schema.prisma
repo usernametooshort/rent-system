@@ -91,10 +91,24 @@ model RentRecord {
   paidAt    DateTime?
   createdAt DateTime  @default(now())
   
+  // 租客支付相关
+  paymentProofUrl  String?   // 支付凭证截图URL
+  paymentStatus    String    @default("unpaid") // 'unpaid' | 'pending' | 'confirmed' | 'rejected'
+  paymentNote      String?   // 确认/拒绝备注
+  submittedAt      DateTime? // 凭证提交时间
+  
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tenantId  String
   
   @@unique([tenantId, month])
+}
+
+// ============ 付款设置 ============
+model PaymentSettings {
+  id              String   @id @default("default")
+  wechatQrCodeUrl String?  // 微信收款码图片URL
+  paymentNote     String?  // 付款说明（如：请备注房间号）
+  updatedAt       DateTime @updatedAt
 }
 
 // ============ 公告 ============

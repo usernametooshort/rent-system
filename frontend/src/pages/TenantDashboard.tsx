@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import client from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import { Room, RoomStatus } from '../types'
@@ -57,6 +58,7 @@ const ApplianceList = ({ appliances }: { appliances: any[] }) => (
 // 主组件
 const TenantDashboard: React.FC = () => {
     const { user } = useAuth()
+    const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [isMoveOutModalOpen, setIsMoveOutModalOpen] = useState(false)
     const [moveOutDate, setMoveOutDate] = useState('')
@@ -129,6 +131,15 @@ const TenantDashboard: React.FC = () => {
 
             {/* 快捷操作 */}
             <div className="flex gap-3 mb-6">
+                <button
+                    onClick={() => navigate('/tenant/payment')}
+                    className="flex-1 bg-white p-3 rounded-xl shadow-sm text-center active:scale-95 transition-transform"
+                >
+                    <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <CreditCard size={16} />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">缴纳房租</span>
+                </button>
                 <button
                     onClick={() => setIsMoveOutModalOpen(true)}
                     className="flex-1 bg-white p-3 rounded-xl shadow-sm text-center active:scale-95 transition-transform"

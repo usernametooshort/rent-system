@@ -15,6 +15,7 @@ import { statsRoutes } from './routes/stats.js'
 import { uploadRoutes } from './routes/upload.js'
 import { repairRoutes } from './routes/repair.js'
 import { checkoutRoutes } from './routes/checkout.js'
+import { paymentRoutes } from './routes/payment.js'
 
 const app = fastify({
     logger: true
@@ -58,6 +59,7 @@ app.register(statsRoutes, { prefix: '/api/stats' })
 app.register(uploadRoutes, { prefix: '/api/upload' })
 app.register(repairRoutes, { prefix: '/api/repair-requests' })
 app.register(checkoutRoutes, { prefix: '/api/checkout' })
+app.register(paymentRoutes, { prefix: '/api/payment' })
 
 // 全局错误处理
 app.setErrorHandler(errorHandler)

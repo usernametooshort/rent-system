@@ -5,6 +5,7 @@ import GuestHome from './pages/GuestHome'
 import LoginPage from './pages/LoginPage'
 import TenantDashboard from './pages/TenantDashboard'
 import TenantServices from './pages/TenantServices'
+import TenantPayment from './pages/TenantPayment'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminRooms from './pages/admin/AdminRooms'
@@ -39,6 +40,7 @@ function App() {
                         <Route path="/tenant">
                             <Route index element={<TenantDashboard />} />
                             <Route path="services" element={<TenantServices />} />
+                            <Route path="payment" element={<TenantPayment />} />
                         </Route>
                     </Route>
 
