@@ -27,7 +27,10 @@ const GuestHome: React.FC = () => {
             {/* Header */}
             <header className="fixed top-0 left-0 right-0 z-10 bg-white/80 backdrop-blur-md shadow-sm">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex justify-between items-center">
-                    <h1 className="text-xl font-bold text-gray-900">好房推荐</h1>
+                    <div className="flex items-center space-x-2">
+                        <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+                        <h1 className="text-xl font-black text-primary-600 tracking-tighter">My 租客宝</h1>
+                    </div>
                     <button
                         onClick={() => navigate('/login')}
                         className="text-sm font-medium text-primary-600 hover:text-primary-700"

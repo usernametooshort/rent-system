@@ -54,9 +54,10 @@ const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="px-8 py-6 bg-primary-600 text-white">
-                    <h1 className="text-2xl font-bold">房屋租赁管理</h1>
-                    <p className="text-primary-100 mt-2">安全、便捷的房屋管理平台</p>
+                <div className="px-8 pt-8 pb-6 bg-white flex flex-col items-center">
+                    <img src="/logo.png" alt="My 租客宝" className="h-20 w-auto mb-4" />
+                    <h1 className="text-3xl font-black text-primary-600 tracking-tight">My 租客宝</h1>
+                    <p className="text-gray-500 mt-2 font-medium">安全、便捷的房屋管理平台</p>
                 </div>
 
                 <div className="p-8">

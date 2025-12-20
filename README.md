@@ -1,6 +1,6 @@
-# 🏠 Rent System (房屋租赁管理系统)
+# 🏠 My 租客宝 (Rent Management System)
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/yourusername/rent-system)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/yourusername/rent-system)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/yourusername/rent-system)
 
 一款面向小型房东的、移动优先的现代化房屋租赁管理平台。
@@ -52,4 +52,4 @@ cd rent-system
 - [系统介绍 (HTML 版)](./uploads/system_introduction.html)
 
 ---
-© 2025 Rent System Team. 保留所有权利。
+© 2025 My 租客宝. 保留所有权利。

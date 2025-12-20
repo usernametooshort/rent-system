@@ -14,9 +14,15 @@ const Layout: React.FC = () => {
         <div className="min-h-screen pb-20 bg-gray-50">
             {/* Top Bar */}
             <header className="bg-white shadow-sm h-14 flex items-center justify-between px-4 sticky top-0 z-10">
-                <h1 className="font-bold text-lg text-gray-900">
-                    {user?.role === 'admin' ? '业主管理端' : '我的家'}
-                </h1>
+                <div className="flex items-center space-x-2">
+                    <img src="/logo.png" alt="Logo" className="h-8 w-auto" />
+                    <h1 className="font-black text-xl text-primary-600 tracking-tighter">
+                        My 租客宝
+                        <span className="ml-2 text-xs font-medium text-gray-400 border-l pl-2 border-gray-200">
+                            {user?.role === 'admin' ? '业主版' : '租客版'}
+                        </span>
+                    </h1>
+                </div>
                 <div className="flex items-center space-x-4">
                     <button
                         onClick={() => setIsSettingsOpen(true)}
