@@ -83,6 +83,19 @@ export class TenantService {
         })
 
         if (!tenant) throw new NotFoundError('租客不存在')
+
+        // 如果是已退租租客且没有关联房间，尝试从退租记录中找回房号
+        if (!tenant.room && tenant.status === 'moved_out') {
+            const checkoutRecord = await prisma.checkoutRecord.findFirst({
+                where: { tenantPhone: tenant.phone },
+                orderBy: { checkoutDate: 'desc' }
+            })
+            if (checkoutRecord) {
+                // 将历史房号挂载到一个虚拟的属性上，方便前端读取
+                (tenant as any).lastRoomNumber = checkoutRecord.roomNumber
+            }
+        }
+
         return tenant
     }
 

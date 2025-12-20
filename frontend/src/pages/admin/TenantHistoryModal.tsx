@@ -184,7 +184,9 @@ const TenantHistoryModal: React.FC<TenantHistoryModalProps> = ({ isOpen, onClose
                                             </div>
                                             <div>
                                                 <div className="text-xs text-gray-400">曾租房间</div>
-                                                <div className="font-bold text-gray-900">{tenant.room?.roomNumber || roomHistory?.[0]?.roomNumber || '未知'}</div>
+                                                <div className="font-bold text-gray-900">
+                                                    {tenant.room?.roomNumber || tenant.lastRoomNumber || roomHistory?.[0]?.roomNumber || '未知'}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 col-span-2 pt-2 border-t border-gray-50 text-sm text-gray-600">

@@ -352,12 +352,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose, room, on
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                                <p className="text-sm text-amber-800">
-                                    ⚠️ 确认后将删除该租客的所有数据（租金记录、报修记录等），房间状态将变为"空置"。此操作不可撤销。
-                                </p>
-                            </div>
                         </div>
                     )}
                 </div>
