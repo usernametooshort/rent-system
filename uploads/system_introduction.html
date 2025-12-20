@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统介绍 (v1.1)</title>
+    <title>系统介绍 (v2.0)</title>
 
     <style>
         body {
@@ -108,10 +108,19 @@
 </head>
 
 <body>
-    <h1>🏠 房屋租赁管理系统 (v1.1)</h1>
+    <h1>🏠 房屋租赁管理系统 (v2.0)</h1>
     <blockquote>
         <p>一款面向小型房东的移动优先租赁管理平台，支持房源、租客、租金、报修等全流程管理。</p>
     </blockquote>
+    <hr />
+    <h2>🌟 Version 2.0 升级亮点</h2>
+    <ul>
+        <li><strong>全终端响应式设计</strong>: 针对手机、平板及桌面端进行了深度优化，实现像素级适配。</li>
+        <li><strong>身份证 OCR 识别</strong>: 办理入住时支持一键拍照识别身份证信息，大幅提升登记效率。</li>
+        <li><strong>租客历史档案</strong>: 即使租客退租，其房屋租金、维修等历史记录也将永久安全存档，随时溯源。</li>
+        <li><strong>极致视觉体验</strong>: 引入“电磁边缘”特效与现代化毛玻璃 UI，提供专业且美观的操作界面。</li>
+        <li><strong>优化退租流程</strong>: 全新的三步式退租向导，自动计算损坏赔偿，清算账目一目了然。</li>
+    </ul>
     <hr />
     <h2>📱 系统概览</h2>
     <table>
@@ -133,11 +142,12 @@
             <tr>
                 <td><strong>访问地址</strong></td>
                 <td><code>https://rent-system.pages.dev</code> (Cloudflare) /
-                    <code>http://junited.synology.me:8280</code></td>
+                    <code>http://junited.synology.me:8280</code>
+                </td>
             </tr>
             <tr>
                 <td><strong>技术栈</strong></td>
-                <td>React + Fastify + SQLite + Docker</td>
+                <td>React + Fastify + SQLite + Docker + Tesseract.js (OCR)</td>
             </tr>
         </tbody>
     </table>

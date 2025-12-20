@@ -1,6 +1,6 @@
 {
   "name": "rent-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "房屋租赁管理系统后端 API",
   "main": "dist/app.js",
   "scripts": {

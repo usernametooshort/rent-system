@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.db-journal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Uploads (optional - depending on if you want to store demo images)
+# uploads/*
+# !uploads/system_introduction.html
