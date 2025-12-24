@@ -95,6 +95,8 @@ const LoginPage: React.FC = () => {
 
         const title = isIOS ? "安装到 iPhone" : "安装到 Mac";
 
+        const [downloaded, setDownloaded] = useState(false);
+
         const handleDownloadProfile = async () => {
             try {
                 // 1. Convert logo to base64
@@ -173,12 +175,13 @@ const LoginPage: React.FC = () => {
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
 
+                    setDownloaded(true);
+
                     // 5. Attempt Redirect to Settings after a short delay
                     setTimeout(() => {
                         const shouldOpenSettings = window.confirm("描述文件已下载。是否跳转到“设置”进行安装？\n\n请前往：通用 -> VPN 与设备管理");
                         if (shouldOpenSettings) {
-                            // Try multiple schemes
-                            window.location.href = 'app-settings:root=General&path=ManagedConfigurationList';
+                            openSettings();
                         }
                     }, 1000);
                 };
@@ -189,6 +192,21 @@ const LoginPage: React.FC = () => {
                 console.error('Failed to generate profile:', error);
                 toast.error('生成描述文件失败，请重试');
             }
+        };
+
+        const openSettings = () => {
+            // Try common URL schemes for iOS Settings > General > Profile/Device Management
+            // Note: Apple changes these often, so fallback is necessary.
+            window.location.href = 'App-Prefs:root=General&path=ManagedConfigurationList';
+
+            // Fallback attempts (though only one ref change typically executes)
+            setTimeout(() => {
+                window.location.href = 'prefs:root=General&path=ManagedConfigurationList';
+            }, 500);
+
+            setTimeout(() => {
+                window.location.href = 'App-Prefs:root=General&path=VPN';
+            }, 1000);
         };
 
         return (
@@ -261,6 +279,19 @@ const LoginPage: React.FC = () => {
                                 </svg>
                                 下载描述文件 (免分享点击)
                             </button>
+
+                            {downloaded && (
+                                <button
+                                    onClick={openSettings}
+                                    className="w-full py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center border border-blue-200"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    没有跳转？点此打开设置
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-6">
