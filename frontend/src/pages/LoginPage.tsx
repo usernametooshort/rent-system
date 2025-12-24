@@ -64,7 +64,6 @@ const LoginPage: React.FC = () => {
         setIsIOS(isDeviceIOS);
 
         // Check if device is MacOS Safari (desktop)
-        // Safari on macOS usually has "Macintosh" and "Safari" but not "Chrome" (Chrome also has "Safari" in UA)
         const isDeviceMacSafari = /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome/.test(ua);
         setIsMacSafari(isDeviceMacSafari);
 
@@ -94,7 +93,6 @@ const LoginPage: React.FC = () => {
         if (!showGuide) return null;
 
         const title = isIOS ? "安装到 iPhone" : "安装到 Mac";
-
         const [downloaded, setDownloaded] = useState(false);
 
         const handleDownloadProfile = async () => {
@@ -106,7 +104,6 @@ const LoginPage: React.FC = () => {
 
                 reader.onloadend = () => {
                     const base64data = reader.result as string;
-                    // Remove data URL prefix (e.g., "data:image/png;base64,")
                     const iconBase64 = base64data.split(',')[1];
 
                     // 2. Generate UUIDs
@@ -176,14 +173,6 @@ const LoginPage: React.FC = () => {
                     document.body.removeChild(a);
 
                     setDownloaded(true);
-
-                    // 5. Attempt Redirect to Settings after a short delay
-                    setTimeout(() => {
-                        const shouldOpenSettings = window.confirm("描述文件已下载。是否跳转到“设置”进行安装？\n\n请前往：通用 -> VPN 与设备管理");
-                        if (shouldOpenSettings) {
-                            openSettings();
-                        }
-                    }, 1000);
                 };
 
                 reader.readAsDataURL(blob);
@@ -192,24 +181,6 @@ const LoginPage: React.FC = () => {
                 console.error('Failed to generate profile:', error);
                 toast.error('生成描述文件失败，请重试');
             }
-        };
-
-        const openSettings = () => {
-            // Try to open General settings which is the most reliable path
-            // Deep linking to specific "ManagedConfigurationList" often fails on newer iOS
-
-            // Attempt 1: Just Settings app
-            window.location.href = 'App-Prefs:root=General';
-
-            // Attempt 2: Older scheme
-            setTimeout(() => {
-                window.location.href = 'prefs:root=General';
-            }, 500);
-
-            // Attempt 3: Specific VPN path (sometimes works when General doesn't)
-            setTimeout(() => {
-                window.location.href = 'App-Prefs:root=General&path=VPN';
-            }, 1000);
         };
 
         return (
@@ -268,9 +239,6 @@ const LoginPage: React.FC = () => {
                                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
                                     <div className="w-full border-t border-gray-300"></div>
                                 </div>
-                                <div className="relative flex justify-center">
-                                    <span className="px-2 bg-white text-xs text-gray-500">或者 (高级用户)</span>
-                                </div>
                             </div>
 
                             <button
@@ -280,30 +248,38 @@ const LoginPage: React.FC = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
-                                下载描述文件 (免分享点击)
+                                下载描述文件
                             </button>
 
                             {downloaded && (
-                                <div className="space-y-2">
-                                    <div className="p-3 bg-green-50 rounded-lg text-sm text-green-700 border border-green-200">
-                                        <p className="font-bold">✅ 已下载！请手动安装：</p>
-                                        <p>1. 打开系统【设置】App</p>
-                                        <p>2. 点击顶部的【已下载描述文件】</p>
-                                        <p className="text-xs text-gray-500 mt-1">(旧系统：通用 &rarr; VPN与设备管理)</p>
+                                <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                    <div className="p-4 bg-primary-50 rounded-2xl border-2 border-primary-200 shadow-sm">
+                                        <p className="font-bold text-primary-900 flex items-center mb-3">
+                                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            下载成功！最后一步：
+                                        </p>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center space-x-3 text-primary-800">
+                                                <div className="flex-shrink-0 w-6 h-6 bg-primary-200 rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                                                <p className="text-sm font-medium">打开手机桌面 <span className="underline decoration-2 font-bold text-primary-900">【设置】</span></p>
+                                            </div>
+                                            <div className="flex items-center space-x-3 text-primary-800">
+                                                <div className="flex-shrink-0 w-6 h-6 bg-primary-200 rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                                                <p className="text-sm font-bold bg-white px-2 py-1.5 rounded-lg border-2 border-primary-300 shadow-sm text-primary-900">
+                                                    点击顶部的 “已下载描述文件”
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center space-x-3 text-primary-800">
+                                                <div className="flex-shrink-0 w-6 h-6 bg-primary-200 rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                                                <p className="text-sm font-medium">点击右上角 <span className="font-bold text-primary-900">“安装”</span> 即可成功</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            // Just try to open Settings app root - simplest approach
-                                            window.location.href = 'App-Prefs:';
-                                        }}
-                                        className="w-full py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center border border-blue-200"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        </svg>
-                                        尝试打开设置
-                                    </button>
+                                    <p className="text-[10px] text-gray-400 text-center px-4 leading-relaxed">
+                                        💡 提示：安装后应用会出现在您的桌面上。
+                                    </p>
                                 </div>
                             )}
                         </div>
