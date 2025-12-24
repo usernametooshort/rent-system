@@ -53,8 +53,13 @@ const LoginPage: React.FC = () => {
 
     // PWA Install Prompt
     const [installPrompt, setInstallPrompt] = useState<any>(null)
+    const [isIOS, setIsIOS] = useState(false)
 
     React.useEffect(() => {
+        // Check if device is iOS
+        const isDeviceIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        setIsIOS(isDeviceIOS);
+
         const handler = (e: any) => {
             e.preventDefault()
             setInstallPrompt(e)
@@ -64,6 +69,19 @@ const LoginPage: React.FC = () => {
     }, [])
 
     const handleInstallClick = async () => {
+        if (isIOS) {
+            toast('iOS 用户请点击浏览器底部的"分享"按钮，然后选择"添加到主屏幕"', {
+                icon: '📱',
+                duration: 5000,
+                style: {
+                    borderRadius: '10px',
+                    background: '#333',
+                    color: '#fff',
+                },
+            });
+            return;
+        }
+
         if (!installPrompt) return
         installPrompt.prompt()
         const { outcome } = await installPrompt.userChoice
@@ -154,7 +172,7 @@ const LoginPage: React.FC = () => {
                             我是游客，先看看房源 &rarr;
                         </button>
 
-                        {installPrompt && (
+                        {(installPrompt || isIOS) && (
                             <button
                                 onClick={handleInstallClick}
                                 className="text-sm font-medium text-primary-600 bg-primary-50 px-4 py-2 rounded-full hover:bg-primary-100 transition-colors flex items-center"
