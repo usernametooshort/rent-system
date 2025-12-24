@@ -95,6 +95,102 @@ const LoginPage: React.FC = () => {
 
         const title = isIOS ? "安装到 iPhone" : "安装到 Mac";
 
+        const handleDownloadProfile = async () => {
+            try {
+                // 1. Convert logo to base64
+                const response = await fetch('/logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+
+                reader.onloadend = () => {
+                    const base64data = reader.result as string;
+                    // Remove data URL prefix (e.g., "data:image/png;base64,")
+                    const iconBase64 = base64data.split(',')[1];
+
+                    // 2. Generate UUIDs
+                    const payloadUUID = crypto.randomUUID();
+                    const contentUUID = crypto.randomUUID();
+
+                    // 3. Create .mobileconfig XML
+                    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>PayloadContent</key>
+    <array>
+        <dict>
+            <key>FullScreen</key>
+            <true/>
+            <key>Icon</key>
+            <data>${iconBase64}</data>
+            <key>IsRemovable</key>
+            <true/>
+            <key>Label</key>
+            <string>My 租客宝</string>
+            <key>PayloadDescription</key>
+            <string>Web Clip for My 租客宝</string>
+            <key>PayloadDisplayName</key>
+            <string>My 租客宝 Web Clip</string>
+            <key>PayloadIdentifier</key>
+            <string>com.rentsystem.webclip.${contentUUID}</string>
+            <key>PayloadType</key>
+            <string>com.apple.webClip.managed</string>
+            <key>PayloadUUID</key>
+            <string>${contentUUID}</string>
+            <key>PayloadVersion</key>
+            <integer>1</integer>
+            <key>Precomposed</key>
+            <true/>
+            <key>URL</key>
+            <string>${window.location.origin}</string>
+        </dict>
+    </array>
+    <key>PayloadDisplayName</key>
+    <string>My 租客宝 Install Profile</string>
+    <key>PayloadIdentifier</key>
+    <string>com.rentsystem.profile.${payloadUUID}</string>
+    <key>PayloadOrganization</key>
+    <string>My 租客宝</string>
+    <key>PayloadRemovalDisallowed</key>
+    <false/>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadUUID</key>
+    <string>${payloadUUID}</string>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+</dict>
+</plist>`;
+
+                    // 4. Trigger Download
+                    const blob = new Blob([xmlContent], { type: 'application/x-apple-aspen-config' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'RentSystem.mobileconfig';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // 5. Attempt Redirect to Settings after a short delay
+                    setTimeout(() => {
+                        const shouldOpenSettings = window.confirm("描述文件已下载。是否跳转到“设置”进行安装？\n\n请前往：通用 -> VPN 与设备管理");
+                        if (shouldOpenSettings) {
+                            // Try multiple schemes
+                            window.location.href = 'app-settings:root=General&path=ManagedConfigurationList';
+                        }
+                    }, 1000);
+                };
+
+                reader.readAsDataURL(blob);
+
+            } catch (error) {
+                console.error('Failed to generate profile:', error);
+                toast.error('生成描述文件失败，请重试');
+            }
+        };
+
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowGuide(false)}>
                 <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
@@ -146,6 +242,25 @@ const LoginPage: React.FC = () => {
                                     <p className="text-sm text-gray-500 mt-1">完成后即可在桌面看到应用图标。</p>
                                 </div>
                             </div>
+
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                    <div className="w-full border-t border-gray-300"></div>
+                                </div>
+                                <div className="relative flex justify-center">
+                                    <span className="px-2 bg-white text-xs text-gray-500">或者 (高级用户)</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleDownloadProfile}
+                                className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                下载描述文件 (免分享点击)
+                            </button>
                         </div>
                     ) : (
                         <div className="space-y-6">
