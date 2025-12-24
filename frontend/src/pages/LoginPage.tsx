@@ -54,12 +54,19 @@ const LoginPage: React.FC = () => {
     // PWA Install Prompt
     const [installPrompt, setInstallPrompt] = useState<any>(null)
     const [isIOS, setIsIOS] = useState(false)
-    const [showIOSGuide, setShowIOSGuide] = useState(false)
+    const [isMacSafari, setIsMacSafari] = useState(false)
+    const [showGuide, setShowGuide] = useState(false)
 
     React.useEffect(() => {
+        const ua = navigator.userAgent;
         // Check if device is iOS
-        const isDeviceIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        const isDeviceIOS = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
         setIsIOS(isDeviceIOS);
+
+        // Check if device is MacOS Safari (desktop)
+        // Safari on macOS usually has "Macintosh" and "Safari" but not "Chrome" (Chrome also has "Safari" in UA)
+        const isDeviceMacSafari = /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome/.test(ua);
+        setIsMacSafari(isDeviceMacSafari);
 
         const handler = (e: any) => {
             e.preventDefault()
@@ -70,8 +77,8 @@ const LoginPage: React.FC = () => {
     }, [])
 
     const handleInstallClick = async () => {
-        if (isIOS) {
-            setShowIOSGuide(true)
+        if (isIOS || isMacSafari) {
+            setShowGuide(true)
             return;
         }
 
@@ -82,63 +89,98 @@ const LoginPage: React.FC = () => {
         setInstallPrompt(null)
     }
 
-    // iOS Guide Modal Component
-    const IOSGuideModal = () => {
-        if (!showIOSGuide) return null;
+    // Install Guide Modal Component
+    const InstallGuideModal = () => {
+        if (!showGuide) return null;
+
+        const title = isIOS ? "安装到 iPhone" : "安装到 Mac";
+
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowIOSGuide(false)}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setShowGuide(false)}>
                 <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-bold text-gray-900">安装到 iPhone</h3>
-                        <button onClick={() => setShowIOSGuide(false)} className="text-gray-400 hover:text-gray-600">
+                        <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+                        <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-600">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="flex items-start space-x-4">
-                            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-blue-600">
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                                    <polyline points="16 6 12 2 8 6" />
-                                    <line x1="12" y1="2" x2="12" y2="15" />
-                                </svg>
+                    {isIOS ? (
+                        <div className="space-y-6">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-blue-600">
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                                        <polyline points="16 6 12 2 8 6" />
+                                        <line x1="12" y1="2" x2="12" y2="15" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">1. 点击“分享”按钮</p>
+                                    <p className="text-sm text-gray-500 mt-1">通常在浏览器底部或顶部导航栏中。</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-medium text-gray-900">1. 点击“分享”按钮</p>
-                                <p className="text-sm text-gray-500 mt-1">通常在浏览器底部或顶部导航栏中。</p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-start space-x-4">
-                            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600">
-                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="12" y1="8" x2="12" y2="16" />
-                                    <line x1="8" y1="12" x2="16" y2="12" />
-                                </svg>
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-600">
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <line x1="12" y1="8" x2="12" y2="16" />
+                                        <line x1="8" y1="12" x2="16" y2="12" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">2. 选择“添加到主屏幕”</p>
+                                    <p className="text-sm text-gray-500 mt-1">向下滑动或左右滑动找到该选项。</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-medium text-gray-900">2. 选择“添加到主屏幕”</p>
-                                <p className="text-sm text-gray-500 mt-1">向下滑动或左右滑动找到该选项。</p>
-                            </div>
-                        </div>
 
-                        <div className="flex items-start space-x-4">
-                            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-primary-600">
-                                <span className="font-bold text-sm">Add</span>
-                            </div>
-                            <div>
-                                <p className="font-medium text-gray-900">3. 点击右上角“添加”</p>
-                                <p className="text-sm text-gray-500 mt-1">完成后即可在桌面看到应用图标。</p>
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-primary-600">
+                                    <span className="font-bold text-sm">Add</span>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">3. 点击右上角“添加”</p>
+                                    <p className="text-sm text-gray-500 mt-1">完成后即可在桌面看到应用图标。</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="space-y-6">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-900">
+                                    <span className="font-bold text-xs">File</span>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">1. 点击菜单栏“文件”</p>
+                                    <p className="text-sm text-gray-500 mt-1">位于屏幕左上角的 Safari 菜单中。</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-4">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-primary-600">
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                                        <line x1="8" y1="21" x2="16" y2="21" />
+                                        <line x1="12" y1="17" x2="12" y2="21" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">2. 选择“添加到程序坞”</p>
+                                    <p className="text-sm text-gray-500 mt-1">Click "Add to Dock".</p>
+                                </div>
+                            </div>
+
+                            <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                                💡 提示：此功能需要 macOS Sonoma (Safari 17) 或更高版本。
+                            </div>
+                        </div>
+                    )}
 
                     <button
-                        onClick={() => setShowIOSGuide(false)}
+                        onClick={() => setShowGuide(false)}
                         className="mt-8 w-full py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 active:bg-primary-800 transition-colors"
                     >
                         知道了
@@ -150,7 +192,7 @@ const LoginPage: React.FC = () => {
 
     return (
         <>
-            <IOSGuideModal />
+            <InstallGuideModal />
             <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
                 <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div className="px-8 pt-8 pb-6 bg-white flex flex-col items-center">
@@ -233,7 +275,7 @@ const LoginPage: React.FC = () => {
                                 我是游客，先看看房源 &rarr;
                             </button>
 
-                            {(installPrompt || isIOS) && (
+                            {(installPrompt || isIOS || isMacSafari) && (
                                 <button
                                     onClick={handleInstallClick}
                                     className="text-sm font-medium text-primary-600 bg-primary-50 px-4 py-2 rounded-full hover:bg-primary-100 transition-colors flex items-center"
@@ -241,7 +283,7 @@ const LoginPage: React.FC = () => {
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
-                                    添加到主屏幕
+                                    {(isIOS || isMacSafari) ? (isIOS ? '安装到 iPhone' : '安装到 Mac') : '添加到主屏幕'}
                                 </button>
                             )}
                         </div>
