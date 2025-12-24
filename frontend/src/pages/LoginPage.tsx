@@ -51,6 +51,26 @@ const LoginPage: React.FC = () => {
         }
     }
 
+    // PWA Install Prompt
+    const [installPrompt, setInstallPrompt] = useState<any>(null)
+
+    React.useEffect(() => {
+        const handler = (e: any) => {
+            e.preventDefault()
+            setInstallPrompt(e)
+        }
+        window.addEventListener('beforeinstallprompt', handler)
+        return () => window.removeEventListener('beforeinstallprompt', handler)
+    }, [])
+
+    const handleInstallClick = async () => {
+        if (!installPrompt) return
+        installPrompt.prompt()
+        const { outcome } = await installPrompt.userChoice
+        console.log(`User response to the install prompt: ${outcome}`)
+        setInstallPrompt(null)
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -126,13 +146,25 @@ const LoginPage: React.FC = () => {
                         </Tab.Panels>
                     </Tab.Group>
 
-                    <div className="mt-6 text-center">
+                    <div className="mt-6 flex flex-col items-center space-y-4">
                         <button
                             onClick={() => navigate('/')}
                             className="text-sm text-gray-500 hover:text-gray-900"
                         >
                             我是游客，先看看房源 &rarr;
                         </button>
+
+                        {installPrompt && (
+                            <button
+                                onClick={handleInstallClick}
+                                className="text-sm font-medium text-primary-600 bg-primary-50 px-4 py-2 rounded-full hover:bg-primary-100 transition-colors flex items-center"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                添加到主屏幕
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
